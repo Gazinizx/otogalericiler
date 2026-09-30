@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -27,17 +26,14 @@ import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.TransactionType
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.utils.NotificationUtils
-import com.google.firebase.firestore.FirebaseFirestore
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+import com.example.anadolugalericilersit.utils.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDebtScreen(
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableStateOf(0) }
 
@@ -49,10 +45,10 @@ fun AdminDebtScreen(
         if (searchQuery.isBlank()) {
             dealersList
         } else {
-            val q = searchQuery.trim().lowercase(Locale.getDefault())
+            val q = searchQuery.trim().lowercase()
             dealersList.sortedByDescending { dealer ->
-                dealer.galleryName.lowercase(Locale.getDefault()).contains(q) ||
-                        dealer.authorizedName.lowercase(Locale.getDefault()).contains(q)
+                dealer.galleryName.lowercase().contains(q) ||
+                        dealer.authorizedName.lowercase().contains(q)
             }
         }
     }
@@ -60,7 +56,7 @@ fun AdminDebtScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Galerici Borç & Cari Takip") },
+                title = { Text("Galeri Borç / Ödeme Yönetimi", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
@@ -75,31 +71,39 @@ fun AdminDebtScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                label = { Text("Galeri Adı veya Yetkili İle Ara...") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Galeri Adı veya Yetkili Ara...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             if (filteredDealers.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Kayıtlı galerici bulunamadı.")
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (searchQuery.isBlank()) "Sistemde kayıtlı galeri bulunmuyor." else "Arama sonucu galeri bulunamadı.",
+                        color = Color.Gray
+                    )
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredDealers, key = { it.id }) { dealer ->
-                        AdminDealerDebtCard(
+                        AdminDealerDebtItem(
                             dealer = dealer,
-                            onTransactionAdded = {
+                            onTransactionRecorded = {
                                 refreshTrigger++
                             }
                         )
@@ -111,22 +115,20 @@ fun AdminDebtScreen(
 }
 
 @Composable
-fun AdminDealerDebtCard(
+fun AdminDealerDebtItem(
     dealer: Dealer,
-    onTransactionAdded: () -> Unit
+    onTransactionRecorded: () -> Unit
 ) {
-    val context = LocalContext.current
-    var isExpanded by remember { mutableStateOf(false) }
+    var showForm by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
 
-    var selectedType by remember { mutableStateOf(TransactionType.DEBT) } // DEBT or PAYMENT
+    var selectedType by remember { mutableStateOf(TransactionType.DEBT) }
     var amountInput by remember { mutableStateOf("") }
     var descriptionInput by remember { mutableStateOf("") }
 
     val transactions = remember(dealer.id, LocalStore.debtTransactions[dealer.id]) {
         LocalStore.debtTransactions[dealer.id] ?: mutableListOf()
     }
-
-    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -142,72 +144,92 @@ fun AdminDealerDebtCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = dealer.galleryName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(text = "Yetkili: ${dealer.authorizedName} (${dealer.phone})", fontSize = 12.sp, color = Color.Gray)
+                    Text(dealer.galleryName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Yetkili: ${dealer.authorizedName} • ${dealer.phone}", fontSize = 12.sp, color = Color.Gray)
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (dealer.totalDebt > 0) MaterialTheme.colorScheme.error else Color(0xFF15803D)
+                    color = if (dealer.totalDebt > 0) MaterialTheme.colorScheme.error else Color(0xFF166534),
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        text = "Borç: ${dealer.totalDebt.toInt()} ₺",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        text = if (dealer.totalDebt > 0) "Borç: ${dealer.totalDebt.toInt()} ₺" else "Borcu Yok",
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
-                onClick = { isExpanded = !isExpanded },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(if (isExpanded) Icons.Default.History else Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (isExpanded) "İşlem Formunu Gizle" else "Borç / Ödeme Ekle & Geçmişi Gör")
+                Button(
+                    onClick = {
+                        showForm = !showForm
+                        if (showForm) showHistory = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (showForm) "Kapat" else "İşlem Ekle", fontSize = 12.sp)
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        showHistory = !showHistory
+                        if (showHistory) showForm = false
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (showHistory) "Kapat" else "Geçmiş (${transactions.size})", fontSize = 12.sp)
+                }
             }
 
-            AnimatedVisibility(visible = isExpanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Yeni İşlem Türünü Seçiniz:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Transaction Type Selection
+            AnimatedVisibility(visible = showForm) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text("İşlem Tipi Seçin:", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilterChip(
                             selected = selectedType == TransactionType.DEBT,
                             onClick = { selectedType = TransactionType.DEBT },
-                            label = { Text("➕ Borç Ekle (+)") },
+                            label = { Text("Borç Ekle (+)") },
                             modifier = Modifier.weight(1f)
                         )
-
                         FilterChip(
                             selected = selectedType == TransactionType.PAYMENT,
                             onClick = { selectedType = TransactionType.PAYMENT },
-                            label = { Text("➖ Ödendi / Borçtan Düş (-)") },
+                            label = { Text("Ödendi / Ödeme Alındı (-)") },
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     OutlinedTextField(
                         value = amountInput,
                         onValueChange = { amountInput = it },
-                        label = { Text(if (selectedType == TransactionType.DEBT) "Eklenen Borç Tutarı (₺)" else "Ödenen Tutar (Borçtan Düşülecek ₺)") },
+                        label = { Text("Tutar (₺)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -215,9 +237,9 @@ fun AdminDealerDebtCard(
                     OutlinedTextField(
                         value = descriptionInput,
                         onValueChange = { descriptionInput = it },
-                        label = { Text("Açıklama / İşlem Detayı (Örn: Banka Havalesi / Ekspertiz Bedeli)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Açıklama / Not (Örn: Yıllık Aidat, Havale)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -226,15 +248,11 @@ fun AdminDealerDebtCard(
                         onClick = {
                             val amount = amountInput.toDoubleOrNull()
                             if (amount == null || amount <= 0) {
-                                ToastUtils.showToast(message = "Lütfen geçerli bir tutar giriniz!")
-                                return@Button
-                            }
-                            if (descriptionInput.isBlank()) {
-                                ToastUtils.showToast(message = "Lütfen yapılan işlemi / açıklamayı yazınız!")
+                                ToastUtils.showToast(message = "Lütfen geçerli bir tutar girin!")
                                 return@Button
                             }
 
-                            val now = System.currentTimeMillis()
+                            val now = currentTimeMillis()
                             val tx = DebtTransaction(
                                 dealerId = dealer.id,
                                 amount = amount,
@@ -255,79 +273,72 @@ fun AdminDealerDebtCard(
                             val updatedDealer = dealer.copy(totalDebt = newTotalDebt)
                             LocalStore.dealers[dealer.id] = updatedDealer
 
-                            try {
-                                FirebaseFirestore.getInstance()
-                                    .collection("dealers").document(dealer.id)
-                                    .update("totalDebt", updatedDealer.totalDebt)
-                            } catch (e: Exception) {
-                                // ignore offline
-                            }
-
-                            // Send Status Bar & In-App Notification
                             NotificationUtils.sendDebtOrPaymentNotification(
-                                context,
-                                updatedDealer,
-                                selectedType.name,
-                                amount
+                                dealer = updatedDealer,
+                                type = selectedType.name,
+                                amount = amount
                             )
 
                             amountInput = ""
                             descriptionInput = ""
-                            val msg = if (selectedType == TransactionType.DEBT) {
-                                "Borç kaydı eklendi (+${amount.toInt()} ₺)"
-                            } else {
-                                "Ödeme kaydedildi (-${amount.toInt()} ₺). Galerinin borcundan düşüldü!"
-                            }
-                            ToastUtils.showToast(message = msg)
-                            onTransactionAdded()
+                            showForm = false
+                            ToastUtils.showToast(message = "İşlem başarıyla kaydedildi!")
+                            onTransactionRecorded()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selectedType == TransactionType.DEBT) MaterialTheme.colorScheme.primary else Color(0xFF15803D)
+                            containerColor = if (selectedType == TransactionType.DEBT) MaterialTheme.colorScheme.error else Color(0xFF166534)
                         )
                     ) {
-                        Text(if (selectedType == TransactionType.DEBT) "Borcu Kaydet (+)" else "Ödemeyi Kaydet ve Borçtan Düş (-)")
+                        Text("İşlemi Kaydet")
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text("İşlem Geçmişi (${transactions.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            AnimatedVisibility(visible = showHistory) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    Text("İşlem Geçmişi:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     if (transactions.isEmpty()) {
-                        Text("Henüz işlem kaydı bulunmuyor.", fontSize = 12.sp, color = Color.Gray)
+                        Text("Henüz kaydedilmiş bir borç/ödeme hareketi yok.", fontSize = 12.sp, color = Color.Gray)
                     } else {
-                        transactions.forEach { tx ->
-                            val isPayment = tx.type == TransactionType.PAYMENT
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isPayment) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surface
-                                )
-                            ) {
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = if (isPayment) "[ÖDENDİ] ${tx.description}" else "[BORÇ] ${tx.description}",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                            color = if (isPayment) Color(0xFF166534) else MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = if (isPayment) "-${tx.amount.toInt()} ₺" else "+${tx.amount.toInt()} ₺",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                            color = if (isPayment) Color(0xFF166534) else MaterialTheme.colorScheme.error
-                                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            transactions.forEach { tx ->
+                                val isPayment = tx.type == TransactionType.PAYMENT
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = if (isPayment) "ÖDEME ALINDI (-)" else "BORÇ EKLENDİ (+)",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = if (isPayment) Color(0xFF166534) else MaterialTheme.colorScheme.error
+                                            )
+                                            Text(
+                                                text = if (isPayment) "-${tx.amount.toInt()} ₺" else "+${tx.amount.toInt()} ₺",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = if (isPayment) Color(0xFF166534) else MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                        if (tx.description.isNotBlank()) {
+                                            Text("Not: ${tx.description}", fontSize = 12.sp)
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text("Tarih & Saat: ${formatDate(tx.timestamp)}", fontSize = 11.sp, color = Color.Gray)
                                     }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text("Tarih & Saat: ${dateFormat.format(Date(tx.timestamp))}", fontSize = 11.sp, color = Color.Gray)
                                 }
                             }
                         }

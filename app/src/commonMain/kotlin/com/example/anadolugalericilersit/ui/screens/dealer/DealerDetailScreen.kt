@@ -19,12 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Vehicle
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.DealerStatusBadge
 import com.example.anadolugalericilersit.ui.components.VehicleCard
 import com.example.anadolugalericilersit.ui.viewmodel.DealerViewModel
@@ -42,7 +41,6 @@ fun DealerDetailScreen(
     onBackClick: () -> Unit,
     onNavigateToVehicleDetail: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val dealerDetailState by dealerViewModel.dealerDetailState.collectAsState()
     val dealerVehiclesState by dealerViewModel.dealerVehiclesState.collectAsState()
     val favoriteIds by favoriteViewModel.favoriteIds.collectAsState()
@@ -106,7 +104,7 @@ fun DealerDetailScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             if (dealer.logoUrl.isNotBlank()) {
-                                                AsyncImage(
+                                                AppAsyncImage(
                                                     model = dealer.logoUrl,
                                                     contentDescription = dealer.galleryName,
                                                     contentScale = ContentScale.Crop,
@@ -147,7 +145,7 @@ fun DealerDetailScreen(
 
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Button(
-                                            onClick = { IntentUtils.openDialer(context, dealer.phone) },
+                                            onClick = { IntentUtils.openPhoneDialer(dealer.phone) },
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -156,7 +154,7 @@ fun DealerDetailScreen(
                                         }
 
                                         Button(
-                                            onClick = { IntentUtils.openMaps(context, dealer.latitude, dealer.longitude, dealer.galleryName) },
+                                            onClick = { IntentUtils.openMap(dealer.latitude, dealer.longitude, dealer.galleryName) },
                                             modifier = Modifier.weight(1f),
                                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                                         ) {

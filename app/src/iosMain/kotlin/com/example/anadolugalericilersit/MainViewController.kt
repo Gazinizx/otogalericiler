@@ -1,12 +1,14 @@
 package com.example.anadolugalericilersit
 
 import androidx.compose.ui.window.ComposeUIViewController
-import com.example.anadolugalericilersit.navigation.NavGraph
-import com.example.anadolugalericilersit.ui.theme.AnadoluTheme
+import androidx.navigation.compose.rememberNavController
+import com.example.anadolugalericilersit.navigation.AnadoluNavGraph
+import com.example.anadolugalericilersit.ui.theme.AnadoluGalericilerSitTheme
 import platform.UIKit.UIViewController
 
 fun MainViewController(): UIViewController = ComposeUIViewController {
-    AnadoluTheme {
-        NavGraph()
+    AnadoluGalericilerSitTheme {
+        val navController = rememberNavController()
+        AnadoluNavGraph(navController = navController)
     }
 }

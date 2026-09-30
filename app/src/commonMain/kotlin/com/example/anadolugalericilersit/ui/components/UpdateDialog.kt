@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,8 +22,6 @@ fun UpdateDialog(
     isForce: Boolean,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-
     AlertDialog(
         onDismissRequest = {
             if (!isForce) {
@@ -92,7 +89,7 @@ fun UpdateDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    AppVersionUtils.openUpdateUrl(context, config.apkUrl)
+                    AppVersionUtils.openUpdateUrl(url = config.apkUrl)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

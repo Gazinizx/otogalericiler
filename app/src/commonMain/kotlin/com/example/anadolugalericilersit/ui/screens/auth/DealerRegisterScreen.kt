@@ -19,14 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.AuthViewModel
 import com.example.anadolugalericilersit.utils.Constants
@@ -39,7 +38,6 @@ fun DealerRegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
 
     var galleryName by remember { mutableStateOf("") }
     var authorizedName by remember { mutableStateOf("") }
@@ -68,7 +66,7 @@ fun DealerRegisterScreen(
 
     LaunchedEffect(registerState) {
         if (registerState is Resource.Success) {
-            ToastUtils.showToast(context, "Başvurunuz alındı! Admin onayı bekleniyor.")
+            ToastUtils.showToast(message = "Başvurunuz alındı! Admin onayı bekleniyor.")
             authViewModel.clearRegisterState()
             onRegisterSuccess()
         }
@@ -108,7 +106,7 @@ fun DealerRegisterScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (logoUri != null) {
-                    AsyncImage(
+                    AppAsyncImage(
                         model = logoUri,
                         contentDescription = "Galeri Logosu",
                         contentScale = ContentScale.Crop,
@@ -408,11 +406,11 @@ fun DealerRegisterScreen(
             Button(
                 onClick = {
                     if (!kvkkAccepted) {
-                        ToastUtils.showToast(context, "Lütfen Kayıt ve Ön Bilgilendirme Sözleşmesini okuyup onaylayınız!")
+                        ToastUtils.showToast(message = "Lütfen Kayıt ve Ön Bilgilendirme Sözleşmesini okuyup onaylayınız!")
                         return@Button
                     }
                     authViewModel.registerDealer(
-                        context, galleryName, authorizedName, phone, email, password,
+                        null, galleryName, authorizedName, phone, email, password,
                         city, district, address, taxNumber, iban, ibanOwnerName, description, logoUri
                     )
                 },

@@ -16,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,14 +26,12 @@ import com.example.anadolugalericilersit.data.model.Role
 import com.example.anadolugalericilersit.utils.CameraQrScannerDialog
 import com.example.anadolugalericilersit.utils.IntentUtils
 import com.example.anadolugalericilersit.utils.QRCodeUtils
-import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminDamgaScreen(
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
     var refreshTrigger by remember { mutableStateOf(0) }
     var selectedTab by remember { mutableStateOf(0) } // 0: QR Kod Taraması ile Damga Bas, 1: Bekleyen Damga Talepleri, 2: 10 Damga Ödül Yönetimi
 
@@ -284,13 +281,6 @@ fun AdminDamgaScreen(
                                                         hasDamga = true
                                                     )
                                                     LocalStore.vehicles[vehicle.id] = updatedV
-                                                    try {
-                                                        FirebaseFirestore.getInstance()
-                                                            .collection("vehicles").document(vehicle.id)
-                                                            .update(mapOf("damgaStatus" to "APPROVED", "hasDamga" to true))
-                                                    } catch (e: Exception) {
-                                                        // ignore offline
-                                                    }
                                                     ToastUtils.showToast(message = "Damga başarıyla onaylandı!")
                                                     refreshTrigger++
                                                 }
@@ -313,13 +303,6 @@ fun AdminDamgaScreen(
                                                         hasDamga = false
                                                     )
                                                     LocalStore.vehicles[vehicle.id] = updatedV
-                                                    try {
-                                                        FirebaseFirestore.getInstance()
-                                                            .collection("vehicles").document(vehicle.id)
-                                                            .update(mapOf("damgaStatus" to "REJECTED", "hasDamga" to false))
-                                                    } catch (e: Exception) {
-                                                        // ignore offline
-                                                    }
                                                     ToastUtils.showToast(message = "Damga reddedildi.")
                                                     refreshTrigger++
                                                 }
@@ -388,7 +371,7 @@ fun AdminDamgaScreen(
 
                                     Button(
                                         onClick = {
-                                            QRCodeUtils.sendIbanToWhatsApp(context, dealer)
+                                            QRCodeUtils.sendIbanToWhatsApp(dealer = dealer)
                                         },
                                         modifier = Modifier.fillMaxWidth(),
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

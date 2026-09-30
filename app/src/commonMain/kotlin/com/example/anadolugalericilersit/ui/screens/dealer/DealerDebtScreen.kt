@@ -13,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -22,9 +21,7 @@ import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.TransactionType
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.utils.IntentUtils
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.anadolugalericilersit.utils.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,8 +29,6 @@ fun DealerDebtScreen(
     dealer: Dealer?,
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     val currentDealer = remember(dealer) {
         if (dealer != null) {
             LocalStore.dealers[dealer.id] ?: dealer
@@ -49,8 +44,6 @@ fun DealerDebtScreen(
             emptyList()
         }
     }
-
-    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Scaffold(
         topBar = {
@@ -119,7 +112,7 @@ fun DealerDebtScreen(
                                 val galleryName = currentDealer.galleryName
                                 val debt = currentDealer.totalDebt.toInt()
                                 val message = "Merhaba, $galleryName galeri hesabımdan borç ödemesi yapmak istiyorum. Güncel Borç Tutarım: $debt TL"
-                                IntentUtils.openWhatsApp(context, "05054543099", message)
+                                IntentUtils.openWhatsApp(phone = "05054543099", message = message)
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
@@ -188,7 +181,7 @@ fun DealerDebtScreen(
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Tarih & Saat: ${dateFormat.format(Date(tx.timestamp))}",
+                                        text = "Tarih & Saat: ${formatDate(tx.timestamp)}",
                                         fontSize = 12.sp,
                                         color = Color.Gray
                                     )

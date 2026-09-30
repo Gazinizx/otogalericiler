@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +38,6 @@ fun MyListingsScreen(
     onNavigateToEditVehicle: (String) -> Unit,
     onNavigateToVehicleDetail: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val myListingsState by vehicleViewModel.myListingsState.collectAsState()
 
     var selectedStatusTab by remember { mutableStateOf<VehicleStatus?>(null) }

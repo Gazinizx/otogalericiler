@@ -1,7 +1,8 @@
 package com.example.anadolugalericilersit.data.local
 
 import com.example.anadolugalericilersit.data.model.*
-import java.util.UUID
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+import com.example.anadolugalericilersit.utils.generateUuid
 
 data class RewardRequest(
     val code: String = "",
@@ -11,7 +12,7 @@ data class RewardRequest(
     val iban: String = "",
     val ibanOwnerName: String = "",
     var isApproved: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = currentTimeMillis()
 )
 
 data class StampCodeRequest(
@@ -21,7 +22,7 @@ data class StampCodeRequest(
     val vehicleId: String = "",
     val vehicleTitle: String = "",
     var isUsed: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = currentTimeMillis()
 )
 
 enum class TransactionType {
@@ -30,12 +31,12 @@ enum class TransactionType {
 }
 
 data class DebtTransaction(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = generateUuid(),
     val dealerId: String = "",
     val amount: Double = 0.0,
     val description: String = "",
     val type: TransactionType = TransactionType.DEBT,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = currentTimeMillis()
 )
 
 object LocalStore {
@@ -71,4 +72,3 @@ object LocalStore {
     val stampCodes = mutableMapOf<String, StampCodeRequest>()
     val debtTransactions = mutableMapOf<String, MutableList<DebtTransaction>>() // dealerId -> transactions
 }
-

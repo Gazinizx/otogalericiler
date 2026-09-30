@@ -1,5 +1,7 @@
 package com.example.anadolugalericilersit.data.model
 
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+
 enum class Role {
     SUPER_ADMIN,
     ADMIN,
@@ -16,5 +18,5 @@ data class User(
     val role: Role = Role.USER,
     val dealerId: String? = null,
     val canIssueDamga: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = currentTimeMillis()
 )

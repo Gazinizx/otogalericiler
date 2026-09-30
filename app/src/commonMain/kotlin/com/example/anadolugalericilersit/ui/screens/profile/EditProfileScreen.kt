@@ -18,13 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Dealer
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.DealerViewModel
 import com.example.anadolugalericilersit.utils.Resource
@@ -36,7 +35,6 @@ fun EditProfileScreen(
     dealer: Dealer?,
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val updateState by dealerViewModel.updateProfileState.collectAsState()
 
     var galleryName by remember { mutableStateOf(dealer?.galleryName ?: "") }
@@ -53,13 +51,13 @@ fun EditProfileScreen(
 
     val logoPicker = rememberImagePickerLauncher { uriStr ->
         if (uriStr != null && dealer != null) {
-            dealerViewModel.updateDealerLogo(context, dealer.id, uriStr)
+            dealerViewModel.updateDealerLogo(dealerId = dealer.id, logoUri = uriStr)
         }
     }
 
     LaunchedEffect(updateState) {
         if (updateState is Resource.Success) {
-            ToastUtils.showToast(context, "Profil güncellendi!")
+            ToastUtils.showToast(message = "Profil güncellendi!")
             dealerViewModel.clearUpdateState()
             onBackClick()
         }
@@ -99,7 +97,7 @@ fun EditProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (dealer?.logoUrl.isNullOrBlank().not()) {
-                    AsyncImage(
+                    AppAsyncImage(
                         model = dealer?.logoUrl,
                         contentDescription = "Logo",
                         contentScale = ContentScale.Crop,

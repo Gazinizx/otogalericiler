@@ -22,11 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Vehicle
 import com.example.anadolugalericilersit.data.model.VehicleStatus
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.anadolugalericilersit.utils.formatKm
+import com.example.anadolugalericilersit.utils.formatPrice
 
 @Composable
 fun VehicleCard(
@@ -35,19 +34,8 @@ fun VehicleCard(
     onFavoriteClick: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    val formattedPrice = try {
-        val format = NumberFormat.getInstance(Locale("tr", "TR"))
-        "${format.format(vehicle.price)} ₺"
-    } catch (e: Exception) {
-        "${vehicle.price} ₺"
-    }
-
-    val formattedKm = try {
-        val format = NumberFormat.getInstance(Locale("tr", "TR"))
-        "${format.format(vehicle.km)} KM"
-    } catch (e: Exception) {
-        "${vehicle.km} KM"
-    }
+    val formattedPrice = "${formatPrice(vehicle.price)} ₺"
+    val formattedKm = "${formatKm(vehicle.km)} KM"
 
     Card(
         modifier = Modifier
@@ -65,7 +53,7 @@ fun VehicleCard(
                     .fillMaxWidth()
                     .height(180.dp)
             ) {
-                AsyncImage(
+                AppAsyncImage(
                     model = vehicle.mainImageUrl.ifBlank { vehicle.imageUrls.firstOrNull() },
                     contentDescription = "${vehicle.brand} ${vehicle.model}",
                     contentScale = ContentScale.Crop,

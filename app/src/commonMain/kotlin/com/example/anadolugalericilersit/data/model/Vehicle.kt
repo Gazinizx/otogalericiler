@@ -1,5 +1,7 @@
 package com.example.anadolugalericilersit.data.model
 
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+
 enum class VehicleStatus {
     DRAFT,
     PENDING,
@@ -55,8 +57,6 @@ data class Vehicle(
     val expertReportImageUrl: String = "",
     val bodyPartsCondition: Map<String, String> = emptyMap(),
     val damgaStatus: DamgaStatus = DamgaStatus.NONE,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val createdAt: Long = currentTimeMillis(),
+    val updatedAt: Long = currentTimeMillis()
 )
-
-

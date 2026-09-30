@@ -17,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +45,6 @@ fun HomeScreen(
     onNavigateToAddVehicle: () -> Unit,
     onNavigateToNotifications: () -> Unit
 ) {
-    val context = LocalContext.current
     val recommendedState by homeViewModel.recommendedState.collectAsState()
     val newArrivalsState by homeViewModel.newArrivalsState.collectAsState()
     val dealersState by homeViewModel.dealersState.collectAsState()
@@ -56,7 +54,7 @@ fun HomeScreen(
 
     LaunchedEffect(Unit) {
         homeViewModel.loadData()
-        homeViewModel.checkVersion(context)
+        homeViewModel.checkVersion()
     }
 
     if (versionUpdateState.showDialog) {

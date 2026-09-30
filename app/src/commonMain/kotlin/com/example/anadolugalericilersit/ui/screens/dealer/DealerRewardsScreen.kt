@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,7 +25,7 @@ import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.StampCodeRequest
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.utils.QRCodeUtils
-import java.util.UUID
+import com.example.anadolugalericilersit.utils.generateUuid
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +33,6 @@ fun DealerRewardsScreen(
     dealer: Dealer?,
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
     var refreshTrigger by remember { mutableStateOf(0) }
     var selectedTab by remember { mutableStateOf(0) } // 0: Damgalarım & Ödüller, 1: Damga QR Kodu Üret
 
@@ -160,7 +158,7 @@ fun DealerRewardsScreen(
                                     Button(
                                         onClick = {
                                             if (dealer != null) {
-                                                QRCodeUtils.sendIbanToWhatsApp(context, dealer)
+                                                QRCodeUtils.sendIbanToWhatsApp(dealer = dealer)
                                             } else {
                                                 ToastUtils.showToast(message = "Galerici bilgisi yüklenemedi")
                                             }
@@ -241,7 +239,7 @@ fun DealerRewardsScreen(
 
                 Button(
                     onClick = {
-                        val randomCode = "AGS-DAMGA-${UUID.randomUUID().toString().take(8).uppercase()}"
+                        val randomCode = "AGS-DAMGA-${generateUuid().take(8).uppercase()}"
                         val payload = "AGS-DAMGA:${dealer?.id ?: "dealer_01"}:$randomCode"
 
                         val req = StampCodeRequest(

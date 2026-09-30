@@ -16,12 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.utils.IntentUtils
 
@@ -30,8 +28,6 @@ fun DealerCard(
     dealer: Dealer,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -56,7 +52,7 @@ fun DealerCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (dealer.logoUrl.isNotBlank()) {
-                    AsyncImage(
+                    AppAsyncImage(
                         model = dealer.logoUrl,
                         contentDescription = dealer.galleryName,
                         contentScale = ContentScale.Crop,
@@ -112,7 +108,7 @@ fun DealerCard(
 
             if (dealer.phone.isNotBlank()) {
                 IconButton(
-                    onClick = { IntentUtils.openDialer(context, dealer.phone) },
+                    onClick = { IntentUtils.openPhoneDialer(dealer.phone) },
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
                         .size(40.dp)

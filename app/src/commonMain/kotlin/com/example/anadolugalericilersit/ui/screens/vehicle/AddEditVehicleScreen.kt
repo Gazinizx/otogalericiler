@@ -24,17 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.DamgaStatus
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.Vehicle
 import com.example.anadolugalericilersit.data.model.VehicleStatus
 import com.example.anadolugalericilersit.data.repository.VehicleRepository
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.VehicleViewModel
 import com.example.anadolugalericilersit.utils.Constants
@@ -49,7 +48,6 @@ fun AddEditVehicleScreen(
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit
 ) {
-    val context = LocalContext.current
     val saveState by vehicleViewModel.saveState.collectAsState()
     val uploadProgress by vehicleViewModel.uploadProgress.collectAsState()
 
@@ -142,7 +140,7 @@ fun AddEditVehicleScreen(
 
     LaunchedEffect(saveState) {
         if (saveState is Resource.Success) {
-            ToastUtils.showToast(context, "İlan kaydedildi!")
+            ToastUtils.showToast(message = "İlan kaydedildi!")
             vehicleViewModel.clearSaveState()
             onSaveSuccess()
         }
@@ -199,7 +197,7 @@ fun AddEditVehicleScreen(
 
                 items(newImageUris) { uri ->
                     Box(modifier = Modifier.size(90.dp)) {
-                        AsyncImage(
+                        AppAsyncImage(
                             model = uri,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
@@ -591,7 +589,7 @@ fun AddEditVehicleScreen(
                     )
 
                     vehicleViewModel.saveVehicle(
-                        context = context,
+                        context = null,
                         vehicle = v,
                         newImageUris = newImageUris,
                         videoUri = selectedVideoUri,

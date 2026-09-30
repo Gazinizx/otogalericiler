@@ -34,20 +34,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Vehicle
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.FavoriteViewModel
 import com.example.anadolugalericilersit.ui.viewmodel.VehicleViewModel
 import com.example.anadolugalericilersit.utils.IntentUtils
 import com.example.anadolugalericilersit.utils.Resource
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.anadolugalericilersit.utils.formatKm
+import com.example.anadolugalericilersit.utils.formatPrice
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +59,6 @@ fun VehicleDetailScreen(
     onBackClick: () -> Unit,
     onNavigateToDealerDetail: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val detailState by vehicleViewModel.detailState.collectAsState()
     val favoriteIds by favoriteViewModel.favoriteIds.collectAsState()
     val reportState by vehicleViewModel.reportState.collectAsState()
@@ -171,8 +169,8 @@ fun VehicleDetailScreen(
                     IconButton(onClick = {
                         val v = detailState.data
                         if (v != null) {
-                            val formattedPrice = NumberFormat.getInstance(Locale("tr", "TR")).format(v.price)
-                            IntentUtils.shareVehicle(context, "${v.brand} ${v.model}", formattedPrice, v.id)
+                            val formattedPrice = formatPrice(v.price)
+                            IntentUtils.shareVehicle(title = "${v.brand} ${v.model}", priceText = formattedPrice, vehicleId = v.id)
                         }
                     }) {
                         Icon(Icons.Default.Share, contentDescription = "Paylaş")
@@ -197,7 +195,7 @@ fun VehicleDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Button(
-                            onClick = { IntentUtils.openDialer(context, v.dealerPhone) },
+                            onClick = { IntentUtils.openPhoneDialer(v.dealerPhone) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
                         ) {
@@ -207,7 +205,7 @@ fun VehicleDetailScreen(
                         }
 
                         Button(
-                            onClick = { IntentUtils.openWhatsApp(context, v.dealerPhone, "Merhaba, ${v.brand} ${v.model} ilanınızla ilgileniyorum.") },
+                            onClick = { IntentUtils.openWhatsApp(phone = v.dealerPhone, message = "Merhaba, ${v.brand} ${v.model} ilanınızla ilgileniyorum.") },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                             shape = RoundedCornerShape(10.dp)
@@ -216,7 +214,7 @@ fun VehicleDetailScreen(
                         }
 
                         Button(
-                            onClick = { IntentUtils.openMaps(context, 39.9334, 32.8597, v.dealerName) },
+                            onClick = { IntentUtils.openMap(39.9334, 32.8597, v.dealerName) },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                             shape = RoundedCornerShape(10.dp)
@@ -265,7 +263,7 @@ fun VehicleDetailScreen(
                                 state = pagerState,
                                 modifier = Modifier.fillMaxSize()
                             ) { page ->
-                                AsyncImage(
+                                AppAsyncImage(
                                     model = images[page],
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
@@ -308,7 +306,7 @@ fun VehicleDetailScreen(
                                                 shape = RoundedCornerShape(8.dp)
                                             )
                                     ) {
-                                        AsyncImage(
+                                        AppAsyncImage(
                                             model = url,
                                             contentDescription = null,
                                             contentScale = ContentScale.Crop,
@@ -321,11 +319,7 @@ fun VehicleDetailScreen(
 
                         // Vehicle Main Info Header
                         Column(modifier = Modifier.padding(16.dp)) {
-                            val formattedPrice = try {
-                                "${NumberFormat.getInstance(Locale("tr", "TR")).format(vehicle.price)} ₺"
-                            } catch (e: Exception) {
-                                "${vehicle.price} ₺"
-                            }
+                            val formattedPrice = "${formatPrice(vehicle.price)} ₺"
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -399,7 +393,7 @@ fun VehicleDetailScreen(
                                 SpecRow("Marka", vehicle.brand)
                                 SpecRow("Model", vehicle.model)
                                 SpecRow("Yıl", vehicle.year.toString())
-                                SpecRow("Kilometre", "${NumberFormat.getInstance(Locale("tr", "TR")).format(vehicle.km)} KM")
+                                SpecRow("Kilometre", "${formatKm(vehicle.km)} KM")
                                 SpecRow("Yakıt Tipi", vehicle.fuelType)
                                 SpecRow("Vites Tipi", vehicle.transmission)
                                 SpecRow("Kasa Tipi", vehicle.bodyType)
@@ -526,7 +520,7 @@ fun VehicleDetailScreen(
                                                     .height(180.dp)
                                                     .clip(RoundedCornerShape(8.dp))
                                             ) {
-                                                AsyncImage(
+                                                AppAsyncImage(
                                                     model = vehicle.expertReportImageUrl,
                                                     contentDescription = "Ekspertiz Raporu Belgesi",
                                                     contentScale = ContentScale.Crop,
@@ -605,7 +599,7 @@ fun VehicleDetailScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (vehicle.dealerLogoUrl.isNotBlank()) {
-                                            AsyncImage(
+                                            AppAsyncImage(
                                                 model = vehicle.dealerLogoUrl,
                                                 contentDescription = null,
                                                 contentScale = ContentScale.Crop,

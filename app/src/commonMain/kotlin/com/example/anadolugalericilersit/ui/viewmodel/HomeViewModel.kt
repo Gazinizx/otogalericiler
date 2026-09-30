@@ -62,7 +62,7 @@ class HomeViewModel(
             val vehiclesResult = vehicleRepository.getVehicles(filter = filter, sort = VehicleSort.NEWEST)
             _vehiclesState.value = vehiclesResult
 
-            val dealersResult = dealerRepository.getAllDealers(status = DealerStatus.APPROVED)
+            val dealersResult = dealerRepository.getAllDealers(statusFilter = DealerStatus.APPROVED)
             _dealersState.value = dealersResult
 
             // Recommended (Beğenebileceğiniz Araçlar - sorted by view count / popularity)

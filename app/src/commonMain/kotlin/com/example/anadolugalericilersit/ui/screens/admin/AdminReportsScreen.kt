@@ -21,9 +21,7 @@ import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.AdminViewModel
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.ToastUtils
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.anadolugalericilersit.utils.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,11 +109,7 @@ fun AdminReportsScreen(
                                             color = MaterialTheme.colorScheme.error
                                         )
 
-                                        val formattedDate = try {
-                                            SimpleDateFormat("dd.MM.yyyy HH:mm", Locale("tr")).format(Date(report.createdAt))
-                                        } catch (e: Exception) {
-                                            ""
-                                        }
+                                        val formattedDate = formatDate(report.createdAt)
                                         Text(text = formattedDate, fontSize = 11.sp, color = Color.Gray)
                                     }
 

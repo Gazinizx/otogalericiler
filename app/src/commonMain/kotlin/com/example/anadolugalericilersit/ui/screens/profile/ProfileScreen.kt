@@ -29,14 +29,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.Role
 import com.example.anadolugalericilersit.data.model.User
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.DealerStatusBadge
 import com.example.anadolugalericilersit.ui.viewmodel.AuthViewModel
 
@@ -54,7 +53,6 @@ fun ProfileScreen(
     onNavigateToDealerRewards: () -> Unit,
     onNavigateToDealerDebt: () -> Unit = {}
 ) {
-    val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     if (showDeleteConfirmDialog) {
@@ -153,8 +151,8 @@ fun ProfileScreen(
                                 .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (dealer?.logoUrl.isNull_orBlank().not()) {
-                                AsyncImage(
+                            if (!dealer?.logoUrl.isNullOrEmpty()) {
+                                AppAsyncImage(
                                     model = dealer?.logoUrl,
                                     contentDescription = dealer?.galleryName,
                                     contentScale = ContentScale.Crop,

@@ -1,5 +1,7 @@
 package com.example.anadolugalericilersit.data.model
 
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+
 enum class DealerStatus {
     PENDING,
     APPROVED,
@@ -27,8 +29,8 @@ data class Dealer(
     val workingHours: String = "09:00 - 18:00",
     val accountStatus: DealerStatus = DealerStatus.PENDING,
     val rejectionReason: String = "",
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = currentTimeMillis(),
+    val updatedAt: Long = currentTimeMillis(),
     val totalListings: Int = 0,
     val activeListings: Int = 0,
     val soldListings: Int = 0,
