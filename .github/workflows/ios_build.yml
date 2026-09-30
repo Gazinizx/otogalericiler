@@ -44,10 +44,17 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Build iOS Frameworks (KMP)
-        run: ./gradlew :app:linkDebugFrameworkIosSimulatorArm64 :app:linkDebugFrameworkIosArm64
-      - name: Upload iOS Framework Artifact
+        run: ./gradlew :app:linkDebugFrameworkIosArm64 :app:linkDebugFrameworkIosSimulatorArm64
+      - name: Build iOS Application (.ipa)
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug -sdk iphoneos -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          mkdir -p build/ios/Payload
+          cp -r build/ios/Build/Products/Debug-iphoneos/iosApp.app build/ios/Payload/
+          cd build/ios
+          zip -r iosApp.ipa Payload
+      - name: Upload iOS .ipa Package (For Sideloadly / AltStore / 3uTools)
         uses: actions/upload-artifact@v4
         with:
-          name: ios-compose-framework
-          path: app/build/bin/
+          name: ios-ipa-package
+          path: build/ios/iosApp.ipa
           if-no-files-found: warn
