@@ -28,6 +28,7 @@ jobs:
         with:
           name: android-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
 
   build-ios:
     runs-on: macos-latest
@@ -42,10 +43,11 @@ jobs:
         run: chmod +x gradlew
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-      - name: Build iOS Framework (KMP)
-        run: ./gradlew :app:linkDebugFrameworkIosSimulatorArm64
+      - name: Build iOS Frameworks (KMP)
+        run: ./gradlew :app:linkDebugFrameworkIosSimulatorArm64 :app:linkDebugFrameworkIosArm64
       - name: Upload iOS Framework Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-compose-framework
-          path: app/build/bin/iosSimulatorArm64/debugFramework/
+          path: app/build/bin/
+          if-no-files-found: warn
