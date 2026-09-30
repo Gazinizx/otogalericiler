@@ -10,7 +10,7 @@ struct ComposeView: UIViewControllerRepresentable {
 }
 
 struct ContentView: View {
-    var body: some Scene {
+    var body: some View {
         ComposeView().ignoresSafeArea(.all)
     }
 }
