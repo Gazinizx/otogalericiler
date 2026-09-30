@@ -17,6 +17,8 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Make gradlew executable
+        run: chmod +x gradlew
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Build Android APK
@@ -36,12 +38,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      - name: Make gradlew executable
+        run: chmod +x gradlew
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Build iOS Framework (KMP)
-        run: ./gradlew :app:embedAndSignAppleFrameworkForXcode
+        run: ./gradlew :app:linkDebugFrameworkIosSimulatorArm64
       - name: Upload iOS Framework Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-compose-framework
-          path: app/build/bin/iosSimulatorArm64/
+          path: app/build/bin/iosSimulatorArm64/debugFramework/
