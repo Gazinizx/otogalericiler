@@ -9,7 +9,70 @@ import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.SessionManager
 import com.example.anadolugalericilersit.utils.generateUuid
 
-actual class AuthRepository {
+actual class AuthRepository actual constructor() {
+
+    actual fun isUserLoggedIn(): Boolean {
+        if (LocalStore.currentLoggedInUid != null) return true
+        val savedUid = SessionManager.getSavedUid()
+        return !savedUid.isNullOrBlank()
+    }
+
+    actual suspend fun getCurrentUser(): Resource<User> {
+        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        if (uid.isNullOrBlank()) return Resource.Error("Oturum açık değil")
+        val safeUid: String = uid
+
+        val localUser = LocalStore.users[safeUid]
+        if (localUser != null) {
+            LocalStore.currentLoggedInUid = safeUid
+            if (localUser.email == "europexpert38@gmail.com" ||
+                localUser.email == "gazitasdemir46@gmail.com" ||
+                safeUid.startsWith("admin")
+            ) {
+                val updated = localUser.copy(role = Role.SUPER_ADMIN, canIssueDamga = true)
+                LocalStore.users[safeUid] = updated
+                return Resource.Success(updated)
+            }
+            return Resource.Success(localUser)
+        }
+
+        if (safeUid == "admin_europexpert" || safeUid == "admin_gazitasdemir") {
+            val is1 = safeUid == "admin_europexpert"
+            val adminUser = User(
+                uid = safeUid,
+                email = if (is1) "europexpert38@gmail.com" else "gazitasdemir46@gmail.com",
+                name = if (is1) "EuropExpert Admin" else "Gazi Taşdemir Admin",
+                role = Role.SUPER_ADMIN,
+                canIssueDamga = true
+            )
+            LocalStore.users[safeUid] = adminUser
+            LocalStore.currentLoggedInUid = safeUid
+            return Resource.Success(adminUser)
+        }
+
+        return Resource.Error("Kullanıcı oturumu yüklenemedi")
+    }
+
+    actual suspend fun getCurrentDealerProfile(): Resource<Dealer> {
+        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        if (uid.isNullOrBlank()) return Resource.Error("Oturum açık değil")
+        val safeUid: String = uid
+
+        val user = LocalStore.users[safeUid]
+        if (user?.role == Role.SUPER_ADMIN ||
+            user?.role == Role.ADMIN ||
+            user?.email == "europexpert38@gmail.com" ||
+            user?.email == "gazitasdemir46@gmail.com" ||
+            safeUid.startsWith("admin")
+        ) {
+            return Resource.Error("Admin kullanıcısının galeri profili yoktur")
+        }
+
+        val localDealer = LocalStore.dealers[safeUid]
+        if (localDealer != null) return Resource.Success(localDealer)
+
+        return Resource.Error("Galeri profili yüklenemedi")
+    }
 
     actual suspend fun login(email: String, password: String): Resource<User> {
         val cleanEmail = email.trim()
@@ -68,17 +131,12 @@ actual class AuthRepository {
     }
 
     actual suspend fun checkSession(): Resource<User> {
-        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
-        if (uid.isNullOrBlank()) return Resource.Error("Oturum açık değil")
-        val user = LocalStore.users[uid] ?: return Resource.Error("Kullanıcı bulunamadı")
-        LocalStore.currentLoggedInUid = uid
-        return Resource.Success(user)
+        return getCurrentUser()
     }
 
-    actual suspend fun logout(): Resource<Unit> {
+    actual fun logout() {
         LocalStore.currentLoggedInUid = null
         SessionManager.clearSession()
-        return Resource.Success(Unit)
     }
 
     actual suspend fun registerDealer(
