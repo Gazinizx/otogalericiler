@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "601312830767",
+    "project_id": "galeri-6fa72",
+    "storage_bucket": "galeri-6fa72.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601312830767:android:366f3f6fe76be5b44d6dda",
+        "android_client_info": {
+          "package_name": "com.example.anadolugalericilersit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

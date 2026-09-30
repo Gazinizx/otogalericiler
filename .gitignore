@@ -1,0 +1,19 @@
+*.iml
+.gradle
+build/
+**/build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.idea
+.kotlin
+.ds_store
+*.apk
+*.aab
+*.ipa
+
+# iOS
+iosApp/DerivedData
+iosApp/*.xcodeproj/project.xcworkspace
+iosApp/*.xcodeproj/xcuserdata
