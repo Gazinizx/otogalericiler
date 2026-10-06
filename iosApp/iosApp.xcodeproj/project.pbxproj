@@ -139,6 +139,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../app/build/bin/iosArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/releaseFramework",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -169,6 +174,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../app/build/bin/iosArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/debugFramework",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -197,6 +207,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../app/build/bin/iosArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/releaseFramework",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -224,6 +239,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/../app/build/bin/iosArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/releaseFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosSimulatorArm64/debugFramework",
+					"$(PROJECT_DIR)/../app/build/bin/iosX64/debugFramework",
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
