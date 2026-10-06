@@ -1,5 +1,6 @@
 package com.example.anadolugalericilersit.data.repository
 
+import com.example.anadolugalericilersit.data.local.DebtTransaction
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.DealerStatus
@@ -50,6 +51,19 @@ actual class DealerRepository actual constructor() {
         val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
         val newDebt = if (isDebt) dealer.totalDebt + amount else (dealer.totalDebt - amount).coerceAtLeast(0.0)
         LocalStore.dealers[dealerId] = dealer.copy(totalDebt = newDebt)
+        return Resource.Success(Unit)
+    }
+
+    actual suspend fun getDebtTransactions(dealerId: String): Resource<List<DebtTransaction>> {
+        val list = LocalStore.debtTransactions[dealerId] ?: emptyList()
+        return Resource.Success(list)
+    }
+
+    actual suspend fun updateDamgaCount(dealerId: String, newDamgaCount: Int): Resource<Unit> {
+        val dealer = LocalStore.dealers[dealerId]
+        if (dealer != null) {
+            LocalStore.dealers[dealerId] = dealer.copy(damgaCount = newDamgaCount)
+        }
         return Resource.Success(Unit)
     }
 }

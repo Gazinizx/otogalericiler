@@ -23,4 +23,5 @@ expect class VehicleRepository() {
     suspend fun updateVehicleDamgaStatus(vehicleId: String, damgaStatus: String, approved: Boolean): Resource<Unit>
     suspend fun incrementViewCount(vehicleId: String, currentUserId: String? = null): Resource<Unit>
     suspend fun deleteVehicle(vehicleId: String): Resource<Unit>
+    suspend fun deleteAllVehicles(): Resource<Unit>
 }

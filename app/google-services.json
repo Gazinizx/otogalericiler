@@ -23,6 +23,82 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601312830767:android:366f3f6fe76be5b44d6dda",
+        "android_client_info": {
+          "package_name": "com.europexpert.anadoluotogalericilersit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601312830767:android:366f3f6fe76be5b44d6dda",
+        "android_client_info": {
+          "package_name": "com.anadolugalericilersitesi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601312830767:android:366f3f6fe76be5b44d6dda",
+        "android_client_info": {
+          "package_name": "com.anadoluotogalericiler.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601312830767:android:366f3f6fe76be5b44d6dda",
+        "android_client_info": {
+          "package_name": "com.europexpert.anadoluotogalericiler"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

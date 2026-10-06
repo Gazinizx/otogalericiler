@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -87,80 +88,128 @@ fun DealerDetailScreen(
                             .padding(padding),
                         contentPadding = PaddingValues(bottom = 32.dp)
                     ) {
-                        // Gallery Header Info Card
+                        // Shop Storefront Cover Image & Profile Avatar Card
                         item {
                             Card(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(72.dp)
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.surface),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (dealer.logoUrl.isNotBlank()) {
-                                                AppAsyncImage(
-                                                    model = dealer.logoUrl,
-                                                    contentDescription = dealer.galleryName,
-                                                    contentScale = ContentScale.Crop,
-                                                    modifier = Modifier.fillMaxSize()
+                                Column {
+                                    // Shop / Storefront Photo Banner Header
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        val shopImg = dealer.shopPhotoUrl.ifBlank { dealer.logoUrl }
+                                        if (shopImg.isNotBlank()) {
+                                            AppAsyncImage(
+                                                model = shopImg,
+                                                contentDescription = "Dükkan Fotoğrafı",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(
+                                                    Icons.Default.Store,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(48.dp),
+                                                    tint = MaterialTheme.colorScheme.primary
                                                 )
-                                            } else {
-                                                Icon(Icons.Default.Store, contentDescription = null, modifier = Modifier.size(36.dp))
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text("Galeri Dükkan Fotoğrafı", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    }
+
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            // Authorized Person / Profile Photo Avatar
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(70.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.surface),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                val profileImg = dealer.profilePhotoUrl
+                                                if (profileImg.isNotBlank()) {
+                                                    AppAsyncImage(
+                                                        model = profileImg,
+                                                        contentDescription = "Profil Fotoğrafı",
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier.fillMaxSize()
+                                                    )
+                                                } else {
+                                                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(36.dp))
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.width(16.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(text = dealer.galleryName, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                                Text(text = "Yetkili: ${dealer.authorizedName}", fontSize = 13.sp, color = Color.Gray)
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                DealerStatusBadge(status = dealer.accountStatus)
                                             }
                                         }
 
-                                        Spacer(modifier = Modifier.width(16.dp))
-
-                                        Column {
-                                            Text(text = dealer.galleryName, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                                            Text(text = "Yetkili: ${dealer.authorizedName}", fontSize = 13.sp, color = Color.Gray)
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            DealerStatusBadge(status = dealer.accountStatus)
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = "${dealer.address}, ${dealer.district} / ${dealer.city}", fontSize = 13.sp)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(6.dp))
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = "Çalışma Saatleri: ${dealer.workingHours}", fontSize = 13.sp)
-                                    }
-
-                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Button(
-                                            onClick = { IntentUtils.openPhoneDialer(dealer.phone) },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Galeriyi Ara")
+                                        if (dealer.description.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Text(
+                                                text = dealer.description,
+                                                fontSize = 13.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
 
-                                        Button(
-                                            onClick = { IntentUtils.openMap(dealer.latitude, dealer.longitude, dealer.galleryName) },
-                                            modifier = Modifier.weight(1f),
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                                        ) {
-                                            Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Harita")
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(text = "${dealer.address}, ${dealer.district} / ${dealer.city}", fontSize = 13.sp)
+                                        }
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(text = "Çalışma Saatleri: ${dealer.workingHours}", fontSize = 13.sp)
+                                        }
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Button(
+                                                onClick = { IntentUtils.openPhoneDialer(dealer.phone) },
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Galeriyi Ara")
+                                            }
+
+                                            Button(
+                                                onClick = { IntentUtils.openMap(dealer.latitude, dealer.longitude, dealer.galleryName) },
+                                                modifier = Modifier.weight(1f),
+                                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                                            ) {
+                                                Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Harita")
+                                            }
                                         }
                                     }
                                 }

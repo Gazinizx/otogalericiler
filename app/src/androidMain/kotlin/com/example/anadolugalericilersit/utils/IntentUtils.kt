@@ -54,7 +54,7 @@ actual object IntentUtils {
     }
 
     actual fun shareVehicle(context: Any?, title: String, priceText: String, vehicleId: String) {
-        val text = "Anadolu Galericiler Sitesi'nde harika bir araç buldum!\n\n$title - $priceText TL\n\nDetaylar için uygulamaya göz atın."
+        val text = "Anadolu Galericiler Sitesi'nde harika bir araç buldum!\n\n$title - $priceText TL\nİlan No: $vehicleId\n\nDetaylar için uygulamaya göz atın."
         shareText(context, text)
     }
 

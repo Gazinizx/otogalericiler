@@ -24,6 +24,8 @@ data class Dealer(
     val ibanOwnerName: String = "",
     val description: String = "",
     val logoUrl: String = "",
+    val profilePhotoUrl: String = "",
+    val shopPhotoUrl: String = "",
     val latitude: Double = 39.9334,
     val longitude: Double = 32.8597,
     val workingHours: String = "09:00 - 18:00",
@@ -35,5 +37,7 @@ data class Dealer(
     val activeListings: Int = 0,
     val soldListings: Int = 0,
     val pendingListings: Int = 0,
-    val totalDebt: Double = 0.0
+    val totalDebt: Double = 0.0,
+    val damgaCount: Int = 0,
+    val rewardCycleCount: Int = 0
 )

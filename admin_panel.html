@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anadolu Galericiler Sitesi - Yönetim Paneli</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK (v10.8.0 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item-active { background-color: #1e293b; color: #38bdf8; border-left: 4px solid #38bdf8; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginSection" class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
+                    <i class="fa-solid fa-car-side text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Yönetici Girişi</h1>
+                <p class="text-slate-400 text-sm mt-1">Anadolu Galericiler Sitesi Admin Paneli</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">E-Posta Adresi</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-slate-500"></i>
+                        <input type="email" id="loginEmail" required placeholder="admin@anadolu.com"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Şifre</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-500"></i>
+                        <input type="password" id="loginPassword" required placeholder="••••••••"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-white focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div id="loginError" class="hidden p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-xl"></div>
+                <button type="submit" id="loginBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition duration-200 shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                    <span>Giriş Yap</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN ADMIN DASHBOARD APP -->
+    <div id="appSection" class="hidden flex min-h-screen">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col justify-between shrink-0">
+            <div>
+                <!-- LOGO HEADER -->
+                <div class="p-6 border-b border-slate-700/60 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-shield-halved text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-white text-sm">Anadolu Galeri</h2>
+                        <span class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Admin Panel</span>
+                    </div>
+                </div>
+
+                <!-- NAVIGATION -->
+                <nav class="p-4 space-y-1.5">
+                    <button onclick="showTab('dashboard')" id="nav-dashboard" class="sidebar-item-active w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition text-left">
+                        <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+                    </button>
+                    <button onclick="showTab('dealers')" id="nav-dealers" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fa-solid fa-store w-5"></i> Galeriler
+                        </div>
+                        <span id="badgePendingDealers" class="hidden bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="showTab('damga')" id="nav-damga" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fa-solid fa-stamp text-amber-400 w-5"></i> Damga & Ödüller
+                        </div>
+                        <span id="badgeDamga" class="hidden bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="showTab('vehicles')" id="nav-vehicles" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fa-solid fa-car w-5"></i> İlanlar
+                        </div>
+                        <span id="badgePendingVehicles" class="hidden bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="showTab('reports')" id="nav-reports" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fa-solid fa-flag w-5"></i> Şikayetler
+                        </div>
+                        <span id="badgeReports" class="hidden bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button onclick="showTab('config')" id="nav-config" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <i class="fa-solid fa-sliders w-5"></i> Sürüm Ayarları
+                    </button>
+                </nav>
+            </div>
+
+            <!-- USER FOOTER -->
+            <div class="p-4 border-t border-slate-700/60">
+                <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <div class="truncate">
+                            <p id="adminUserEmail" class="text-xs font-medium text-white truncate">admin@anadolu.com</p>
+                            <span class="text-[10px] text-slate-400">Yönetici</span>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" title="Çıkış Yap" class="text-slate-400 hover:text-red-400 transition p-2">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-8 overflow-y-auto max-h-screen">
+
+            <!-- TAB: DASHBOARD -->
+            <div id="tab-dashboard" class="space-y-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Sistem Genel Bakış</h1>
+                    <p class="text-slate-400 text-sm">Anadolu Galericiler Sitesi canlı veri göstergeleri</p>
+                </div>
+
+                <!-- STATS CARDS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase text-slate-400">Toplam Galeri</span>
+                            <div class="w-10 h-10 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-store text-lg"></i>
+                            </div>
+                        </div>
+                        <h3 id="statTotalDealers" class="text-3xl font-bold text-white mt-3">0</h3>
+                        <p class="text-xs text-amber-400 mt-2 font-medium" id="statPendingDealersText">0 onay bekliyor</p>
+                    </div>
+
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase text-slate-400">Damgalı Galeriler</span>
+                            <div class="w-10 h-10 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-stamp text-lg"></i>
+                            </div>
+                        </div>
+                        <h3 id="statTotalStamps" class="text-3xl font-bold text-amber-400 mt-3">0 Damga</h3>
+                        <p class="text-xs text-emerald-400 mt-2 font-medium" id="statAwardedDealersText">0 galeri 6 damgayı tamamladı 🎉</p>
+                    </div>
+
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase text-slate-400">Toplam İlan</span>
+                            <div class="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-car text-lg"></i>
+                            </div>
+                        </div>
+                        <h3 id="statTotalVehicles" class="text-3xl font-bold text-white mt-3">0</h3>
+                        <p class="text-xs text-emerald-400 mt-2 font-medium" id="statPublishedVehiclesText">0 yayında</p>
+                    </div>
+
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase text-slate-400">Şikayetler</span>
+                            <div class="w-10 h-10 bg-rose-500/10 text-rose-400 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                            </div>
+                        </div>
+                        <h3 id="statTotalReports" class="text-3xl font-bold text-white mt-3">0</h3>
+                        <p class="text-xs text-rose-400 mt-2 font-medium">Çözüm bekleyen bildirimler</p>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS & RECENT ACTIVITY -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- ONAY BEKLEYEN GALERİLER HIZLI LİSTE -->
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-white text-lg">Onay Bekleyen Galeriler</h3>
+                            <button onclick="showTab('dealers')" class="text-xs text-blue-400 hover:underline font-semibold">Tümünü Gör</button>
+                        </div>
+                        <div id="quickPendingDealersList" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Yükleniyor...</p>
+                        </div>
+                    </div>
+
+                    <!-- DAMGA BEKLEYEN İLANLAR HIZLI LİSTE -->
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-white text-lg"><i class="fa-solid fa-stamp text-amber-400 mr-2"></i> Damga Bekleyen İlanlar (5K+ TL)</h3>
+                            <button onclick="showTab('damga')" class="text-xs text-amber-400 hover:underline font-semibold">Tümünü Gör</button>
+                        </div>
+                        <div id="quickPendingDamgaList" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: DEALERS -->
+            <div id="tab-dealers" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Galeri Yönetimi ve Damga Sayıları</h1>
+                        <p class="text-slate-400 text-sm">Galerilerin durumunu, damga sayılarını ve borçlarını tek ekrandan yönetin</p>
+                    </div>
+                    <!-- FILTERS -->
+                    <div class="flex items-center gap-3">
+                        <select id="dealerFilterStatus" onchange="loadDealers()" class="bg-slate-800 border border-slate-700 text-sm rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                            <option value="ALL">Tüm Durumlar</option>
+                            <option value="PENDING">Onay Bekleyenler</option>
+                            <option value="APPROVED">Onaylanmış Galeriler</option>
+                            <option value="REJECTED">Reddedilenler</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- DEALERS TABLE -->
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/60 border-b border-slate-700 text-xs uppercase font-semibold text-slate-400">
+                                    <th class="p-4">Galeri Adı</th>
+                                    <th class="p-4">Yetkili / İletişim</th>
+                                    <th class="p-4">Şehir / İlçe</th>
+                                    <th class="p-4">Damga Sayısı</th>
+                                    <th class="p-4">Durum</th>
+                                    <th class="p-4 text-right">Yönetim Aksiyonları</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dealersTableBody" class="divide-y divide-slate-700/60 text-sm">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-500">Galeriler yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: DAMGA & REWARDS -->
+            <div id="tab-damga" class="hidden space-y-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-white"><i class="fa-solid fa-award text-amber-400 mr-2"></i> Damga & 6 Damga Ödül Yönetimi</h1>
+                    <p class="text-slate-400 text-sm">Galerilerin damga ilerlemeleri, ekspertiz onayları ve 5.000 TL nakit ödül kazananlar</p>
+                </div>
+
+                <!-- 6 DAMGA TAMAMLAYAN GALERİLER KARTI -->
+                <div class="bg-gradient-to-br from-amber-500/10 via-slate-800 to-slate-800 p-6 rounded-2xl border border-amber-500/30 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl border border-amber-500/40">
+                                🏆
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">6 Damgayı Tamamlayan ve 5.000 TL Ödül Kazanan Galeriler</h3>
+                                <p class="text-xs text-amber-400 font-medium">Bu galeriler 6 damgalı aracı tamamlamıştır ve nakit ödül hak etmiştir.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="awardedDealersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                        <p class="text-slate-500 text-sm col-span-full">Yükleniyor...</p>
+                    </div>
+                </div>
+
+                <!-- BEKLEYEN DAMGA TALEPLERİ (5000+ TL EKSPERTİZLİ ARAÇLAR) -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white">Damga Onayı Bekleyen İlanlar (5.000 TL ve Üzeri Ekspertizli)</h3>
+                    <div id="damgaVehiclesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <p class="text-slate-500 text-sm col-span-full">Damga talepleri yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: VEHICLES -->
+            <div id="tab-vehicles" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">İlanlar Yönetimi</h1>
+                        <p class="text-slate-400 text-sm">Tüm araç ilanlarını listeleyin, onaylayın veya silin</p>
+                    </div>
+                    <!-- FILTERS -->
+                    <div class="flex items-center gap-3">
+                        <select id="vehicleFilterStatus" onchange="loadVehicles()" class="bg-slate-800 border border-slate-700 text-sm rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                            <option value="ALL">Tüm İlanlar</option>
+                            <option value="PUBLISHED">Yayında Olanlar</option>
+                            <option value="PENDING">Onay Bekleyenler</option>
+                            <option value="SOLD">Satılanlar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- VEHICLES GRID -->
+                <div id="vehiclesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p class="text-slate-500 col-span-full text-center py-12">İlanlar yükleniyor...</p>
+                </div>
+            </div>
+
+            <!-- TAB: REPORTS -->
+            <div id="tab-reports" class="hidden space-y-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Şikayetler ve Raporlar</h1>
+                    <p class="text-slate-400 text-sm">Kullanıcıların bildirdiği uygunsuz ilanlar</p>
+                </div>
+
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/60 border-b border-slate-700 text-xs uppercase font-semibold text-slate-400">
+                                    <th class="p-4">Araç ID / Başlık</th>
+                                    <th class="p-4">Bildiren Kullanıcı</th>
+                                    <th class="p-4">Sebep</th>
+                                    <th class="p-4">Tarih</th>
+                                    <th class="p-4 text-right">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody" class="divide-y divide-slate-700/60 text-sm">
+                                <tr>
+                                    <td colspan="5" class="p-8 text-center text-slate-500">Raporlar yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CONFIG -->
+            <div id="tab-config" class="hidden space-y-6 max-w-3xl">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Uygulama Sürüm Yönetimi</h1>
+                    <p class="text-slate-400 text-sm">Mobil uygulamanın canlı güncelleme ve versiyon ayarlarını yönetin</p>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">En Son Sürüm Kodu (latestVersionCode)</label>
+                            <input type="number" id="cfgLatestVersionCode" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Minimum Zorunlu Sürüm Kodu (minVersionCode)</label>
+                            <input type="number" id="cfgMinVersionCode" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Sürüm Adı (latestVersionName)</label>
+                        <input type="text" id="cfgLatestVersionName" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Güncelleme Başlığı (updateTitle)</label>
+                        <input type="text" id="cfgUpdateTitle" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">Güncelleme Mesajı (updateMessage)</label>
+                        <textarea id="cfgUpdateMessage" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-2">
+                        <input type="checkbox" id="cfgIsForceUpdate" class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+                        <label for="cfgIsForceUpdate" class="text-sm font-medium text-white">Zorunlu Güncelleme Olsun (isForceUpdate)</label>
+                    </div>
+
+                    <button onclick="saveAppConfig()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Ayarları Kaydet
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyA_OzS8Dg6E4WPML4vakxiXdYWpzrRYLvo",
+            authDomain: "galeri-6fa72.firebaseapp.com",
+            projectId: "galeri-6fa72",
+            storageBucket: "galeri-6fa72.firebasestorage.app",
+            messagingSenderId: "601312830767",
+            appId: "1:601312830767:web:366f3f6fe76be5b44d6dda"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // AUTH MONITOR
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('appSection').classList.remove('hidden');
+                document.getElementById('adminUserEmail').innerText = user.email;
+                loadDashboardData();
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('appSection').classList.add('hidden');
+            }
+        });
+
+        // LOGIN
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errDiv = document.getElementById('loginError');
+            errDiv.classList.add('hidden');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (err) {
+                errDiv.innerText = "Giriş başarısız: " + (err.message || "E-posta veya şifre hatalı");
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        // LOGOUT
+        function handleLogout() {
+            auth.signOut();
+        }
+
+        // TAB SWITCHING
+        function showTab(tabName) {
+            ['dashboard', 'dealers', 'damga', 'vehicles', 'reports', 'config'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) navBtn.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left";
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            if (activeNav) activeNav.className = "sidebar-item-active w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition text-left";
+
+            if (tabName === 'dealers') loadDealers();
+            if (tabName === 'damga') loadDamgaTab();
+            if (tabName === 'vehicles') loadVehicles();
+            if (tabName === 'reports') loadReports();
+            if (tabName === 'config') loadAppConfig();
+        }
+
+        // DASHBOARD DATA
+        async function loadDashboardData() {
+            // Dealers Stats
+            const dealersSnap = await db.collection('dealers').get();
+            const totalDealers = dealersSnap.size;
+            let pendingDealersCount = 0;
+            let totalStamps = 0;
+            let awardedDealersCount = 0;
+            let pendingDealersHtml = '';
+
+            dealersSnap.forEach(doc => {
+                const d = doc.data();
+                const stamps = d.damgaCount || 0;
+                totalStamps += stamps;
+                if (stamps >= 6) awardedDealersCount++;
+
+                if (d.accountStatus === 'PENDING') {
+                    pendingDealersCount++;
+                    pendingDealersHtml += `
+                        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                            <div>
+                                <h4 class="font-semibold text-white text-sm">${d.galleryName || 'Galeri'}</h4>
+                                <p class="text-xs text-slate-400">${d.city || ''} • ${d.authorizedName || ''}</p>
+                            </div>
+                            <button onclick="updateDealerStatus('${doc.id}', 'APPROVED')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">Onayla</button>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('statTotalDealers').innerText = totalDealers;
+            document.getElementById('statPendingDealersText').innerText = `${pendingDealersCount} onay bekliyor`;
+            document.getElementById('statTotalStamps').innerText = `${totalStamps} Damga`;
+            document.getElementById('statAwardedDealersText').innerText = `${awardedDealersCount} galeri 6 damgayı tamamladı 🎉`;
+            document.getElementById('quickPendingDealersList').innerHTML = pendingDealersHtml || '<p class="text-slate-500 text-sm">Onay bekleyen galeri yok.</p>';
+
+            const badgePendingDealers = document.getElementById('badgePendingDealers');
+            if (pendingDealersCount > 0) {
+                badgePendingDealers.innerText = pendingDealersCount;
+                badgePendingDealers.classList.remove('hidden');
+            } else {
+                badgePendingDealers.classList.add('hidden');
+            }
+
+            // Vehicles Stats
+            const vehiclesSnap = await db.collection('vehicles').get();
+            const totalVehicles = vehiclesSnap.size;
+            let publishedCount = 0;
+            let pendingVehiclesCount = 0;
+            let pendingDamgaCount = 0;
+            let totalViews = 0;
+            let pendingDamgaHtml = '';
+
+            vehiclesSnap.forEach(doc => {
+                const v = doc.data();
+                if (v.status === 'PUBLISHED') publishedCount++;
+                if (v.status === 'PENDING') pendingVehiclesCount++;
+                if (v.damgaStatus === 'PENDING' && (v.expertInspectionCost || 0) >= 5000) {
+                    pendingDamgaCount++;
+                    pendingDamgaHtml += `
+                        <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-amber-500/30">
+                            <div>
+                                <h4 class="font-semibold text-white text-sm">${v.brand || ''} ${v.model || ''}</h4>
+                                <p class="text-xs text-amber-400 font-semibold">${v.dealerName || 'Galeri'} • 5.000+ TL Ekspertizli</p>
+                            </div>
+                            <button onclick="approveDamgaForVehicle('${doc.id}', '${v.dealerId}')" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold rounded-lg transition">Damgayı Onayla</button>
+                        </div>
+                    `;
+                }
+                totalViews += (v.viewCount || 0);
+            });
+
+            document.getElementById('statTotalVehicles').innerText = totalVehicles;
+            document.getElementById('statPublishedVehiclesText').innerText = `${publishedCount} yayında`;
+            document.getElementById('quickPendingDamgaList').innerHTML = pendingDamgaHtml || '<p class="text-slate-500 text-sm">Damga bekleyen ilan yok.</p>';
+
+            const badgeDamga = document.getElementById('badgeDamga');
+            if (pendingDamgaCount > 0) {
+                badgeDamga.innerText = pendingDamgaCount;
+                badgeDamga.classList.remove('hidden');
+            } else {
+                badgeDamga.classList.add('hidden');
+            }
+
+            const badgePendingVehicles = document.getElementById('badgePendingVehicles');
+            if (pendingVehiclesCount > 0) {
+                badgePendingVehicles.innerText = pendingVehiclesCount;
+                badgePendingVehicles.classList.remove('hidden');
+            } else {
+                badgePendingVehicles.classList.add('hidden');
+            }
+
+            // Reports Stats
+            const reportsSnap = await db.collection('reports').get();
+            let activeReportsCount = 0;
+            reportsSnap.forEach(doc => {
+                if (!doc.data().isResolved) activeReportsCount++;
+            });
+
+            document.getElementById('statTotalReports').innerText = activeReportsCount;
+            const badgeReports = document.getElementById('badgeReports');
+            if (activeReportsCount > 0) {
+                badgeReports.innerText = activeReportsCount;
+                badgeReports.classList.remove('hidden');
+            } else {
+                badgeReports.classList.add('hidden');
+            }
+        }
+
+        // LOAD DEALERS
+        async function loadDealers() {
+            const statusFilter = document.getElementById('dealerFilterStatus').value;
+            const tbody = document.getElementById('dealersTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">Yükleniyor...</td></tr>';
+
+            const snap = await db.collection('dealers').get();
+            let html = '';
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (statusFilter !== 'ALL' && d.accountStatus !== statusFilter) return;
+
+                const stamps = d.damgaCount || 0;
+                const cycles = d.rewardCycleCount || 0;
+
+                let stampBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full text-xs font-bold">⭐ ${stamps} / 6 Damga ${cycles > 0 ? `(${cycles} Defa Tamamlandı)` : ''}</span>`;
+                if (stamps >= 6) {
+                    stampBadge = `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">🏆 6 Damga Doldu! (${cycles + 1}. Defa)</span>`;
+                }
+
+                let statusBadge = '<span class="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full text-xs font-semibold">BİLİNMİYOR</span>';
+                if (d.accountStatus === 'PENDING') statusBadge = '<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-full text-xs font-semibold">ONAY BEKLİYOR</span>';
+                if (d.accountStatus === 'APPROVED') statusBadge = '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-xs font-semibold">ONAYLI</span>';
+                if (d.accountStatus === 'REJECTED') statusBadge = '<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-full text-xs font-semibold">REDDEDİLDİ</span>';
+
+                html += `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="p-4 font-semibold text-white">${d.galleryName || '—'}</td>
+                        <td class="p-4">
+                            <p class="text-white">${d.authorizedName || '—'}</p>
+                            <p class="text-xs text-slate-400">${d.phone || ''} • ${d.email || ''}</p>
+                        </td>
+                        <td class="p-4 text-slate-300">${d.city || ''} / ${d.district || ''}</td>
+                        <td class="p-4">${stampBadge}</td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="addStampToDealer('${doc.id}', ${stamps}, ${cycles})" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold rounded-lg transition" title="1 Damga Ekle">+1 Damga</button>
+                            ${stamps >= 6 ? `<button onclick="claimAndResetReward('${doc.id}', ${cycles})" class="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-xs font-bold rounded-lg transition">Ödülü Onayla & Sıfırla</button>` : ''}
+                            ${d.accountStatus !== 'APPROVED' ? `<button onclick="updateDealerStatus('${doc.id}', 'APPROVED')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">Onayla</button>` : ''}
+                            ${d.accountStatus !== 'REJECTED' ? `<button onclick="updateDealerStatus('${doc.id}', 'REJECTED')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition">Reddet</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="6" class="p-8 text-center text-slate-500">Kayıtlı galeri bulunamadı.</td></tr>';
+        }
+
+        async function updateDealerStatus(dealerId, status) {
+            await db.collection('dealers').doc(dealerId).update({ accountStatus: status });
+            loadDashboardData();
+            loadDealers();
+        }
+
+        async function addStampToDealer(dealerId, currentStamps, currentCycles) {
+            let newStamps = currentStamps + 1;
+            let newCycles = currentCycles;
+
+            if (newStamps >= 6) {
+                newStamps = 0;
+                newCycles = currentCycles + 1;
+                alert(`Tebrikler! Galeri 6 damgaya ulaştı.\nDamga sayısı 0'a sıfırlandı ve (${newCycles}. defa 6 damga tamamlandı) sayacına eklendi!`);
+            } else {
+                alert(`Galeriye 1 yeni damga eklendi! Güncel Damga: ${newStamps} / 6`);
+            }
+
+            await db.collection('dealers').doc(dealerId).update({
+                damgaCount: newStamps,
+                rewardCycleCount: newCycles
+            });
+
+            loadDashboardData();
+            loadDealers();
+            loadDamgaTab();
+        }
+
+        async function claimAndResetReward(dealerId, currentCycles) {
+            const newCycles = currentCycles + 1;
+            await db.collection('dealers').doc(dealerId).update({
+                damgaCount: 0,
+                rewardCycleCount: newCycles
+            });
+
+            alert(`Ödül onaylandı ve verildi!\nDamga sayısı 0'a sıfırlandı. Toplam Tamamlama Sayacı: ${newCycles} defa oldu.`);
+            loadDashboardData();
+            loadDealers();
+            loadDamgaTab();
+        }
+
+        // LOAD DAMGA TAB
+        async function loadDamgaTab() {
+            // Awarded Dealers (6 Stamps or Completed Cycles)
+            const dealersSnap = await db.collection('dealers').get();
+            let awardedHtml = '';
+
+            dealersSnap.forEach(doc => {
+                const d = doc.data();
+                const stamps = d.damgaCount || 0;
+                const cycles = d.rewardCycleCount || 0;
+
+                if (stamps >= 6 || cycles > 0) {
+                    awardedHtml += `
+                        <div class="bg-slate-900/80 p-4 rounded-xl border ${stamps >= 6 ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-slate-700'} space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-white">${d.galleryName}</h4>
+                                ${stamps >= 6 ? '<span class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-0.5 rounded-md">🏆 6 DAMGA DOLDU</span>' : ''}
+                            </div>
+                            <p class="text-xs text-amber-400 font-semibold"><i class="fa-solid fa-rotate-left mr-1"></i> Toplam Tamamlama: <strong>${cycles} defa 6 damga tamamlandı</strong></p>
+                            <p class="text-xs text-slate-300"><i class="fa-solid fa-stamp mr-1"></i> Şu Anki Damga: <strong>${stamps} / 6</strong></p>
+                            <p class="text-xs text-slate-300"><i class="fa-solid fa-user mr-1"></i> ${d.authorizedName || ''} (${d.phone || ''})</p>
+                            <p class="text-xs text-amber-400 font-mono"><i class="fa-solid fa-credit-card mr-1"></i> IBAN: ${d.iban || 'Belirtilmedi'}</p>
+                            <p class="text-xs text-slate-400">IBAN Sahibi: ${d.ibanOwnerName || ''}</p>
+                            ${stamps >= 6 ? `<button onclick="claimAndResetReward('${doc.id}', ${cycles})" class="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-xs font-bold rounded-xl transition">Ödülü Ver & Damgayı Sıfırla (+1 Defa)</button>` : ''}
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('awardedDealersGrid').innerHTML = awardedHtml || '<p class="text-slate-500 text-sm col-span-full">Henüz damga tamamlamış galericimiz bulunmuyor.</p>';
+
+            // Damga Onayı Bekleyen İlanlar
+            const vehiclesSnap = await db.collection('vehicles').get();
+            let damgaVehiclesHtml = '';
+
+            vehiclesSnap.forEach(doc => {
+                const v = doc.data();
+                if (v.damgaStatus === 'PENDING' && (v.expertInspectionCost || 0) >= 5000) {
+                    const img = v.mainImageUrl || (v.imageUrls && v.imageUrls[0]) || 'https://via.placeholder.com/400x250?text=Fotoğraf+Yok';
+                    damgaVehiclesHtml += `
+                        <div class="bg-slate-800 rounded-2xl border border-amber-500/30 overflow-hidden shadow-lg flex flex-col justify-between">
+                            <div>
+                                <div class="relative h-44 bg-slate-900">
+                                    <img src="${img}" class="w-full h-full object-cover">
+                                    <span class="absolute top-3 right-3 bg-amber-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full shadow">
+                                        5.000+ TL Ekspertizli
+                                    </span>
+                                </div>
+                                <div class="p-5 space-y-2">
+                                    <h3 class="font-bold text-white text-lg">${v.brand} ${v.model}</h3>
+                                    <p class="text-amber-400 font-bold text-lg">${v.price ? v.price.toLocaleString('tr-TR') + ' ₺' : ''}</p>
+                                    <p class="text-xs text-slate-400"><i class="fa-solid fa-store mr-1"></i> Galeri: ${v.dealerName}</p>
+                                    <p class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> Ekspertiz Ücreti: ${v.expertInspectionCost ? v.expertInspectionCost.toLocaleString('tr-TR') + ' ₺' : ''}</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-900/60 border-t border-slate-700/60 flex items-center justify-between gap-2">
+                                <button onclick="approveDamgaForVehicle('${doc.id}', '${v.dealerId}')" class="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold rounded-xl transition">Damgayı Onayla (+1 Damga)</button>
+                                <button onclick="rejectDamgaForVehicle('${doc.id}')" class="px-3 py-2 bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white text-xs font-semibold rounded-xl transition">Reddet</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('damgaVehiclesList').innerHTML = damgaVehiclesHtml || '<p class="text-slate-500 text-sm col-span-full">Onay bekleyen damgalı ilan başvurusu bulunmuyor.</p>';
+        }
+
+        async function approveDamgaForVehicle(vehicleId, dealerId) {
+            // 1. Vehicle Damga Status
+            await db.collection('vehicles').doc(vehicleId).update({
+                damgaStatus: 'APPROVED',
+                hasDamga: true
+            });
+
+            // 2. Increment Dealer Damga Count & Check Cycle Reset
+            if (dealerId) {
+                const dDoc = await db.collection('dealers').doc(dealerId).get();
+                if (dDoc.exists) {
+                    const currentStamps = dDoc.data().damgaCount || 0;
+                    const currentCycles = dDoc.data().rewardCycleCount || 0;
+                    let newStamps = currentStamps + 1;
+                    let newCycles = currentCycles;
+
+                    if (newStamps >= 6) {
+                        newStamps = 0;
+                        newCycles = currentCycles + 1;
+                        alert(`Damga onaylandı! Galeri 6 damgaya ulaştığı için damga sayısı sıfırlandı ve (${newCycles}. defa 6 damga tamamlandı) sayacına eklendi! 🎉`);
+                    } else {
+                        alert(`Damga onaylandı ve galeriye 1 damga eklendi! (Güncel: ${newStamps} / 6)`);
+                    }
+
+                    await db.collection('dealers').doc(dealerId).update({
+                        damgaCount: newStamps,
+                        rewardCycleCount: newCycles
+                    });
+                }
+            }
+
+            loadDashboardData();
+            loadDamgaTab();
+        }
+
+        async function rejectDamgaForVehicle(vehicleId) {
+            await db.collection('vehicles').doc(vehicleId).update({
+                damgaStatus: 'REJECTED',
+                hasDamga: false
+            });
+            alert('Damga talebi reddedildi.');
+            loadDashboardData();
+            loadDamgaTab();
+        }
+
+        // LOAD VEHICLES
+        async function loadVehicles() {
+            const statusFilter = document.getElementById('vehicleFilterStatus').value;
+            const grid = document.getElementById('vehiclesGrid');
+            grid.innerHTML = '<p class="text-slate-500 col-span-full text-center py-12">Yükleniyor...</p>';
+
+            const snap = await db.collection('vehicles').get();
+            let html = '';
+
+            snap.forEach(doc => {
+                const v = doc.data();
+                if (statusFilter !== 'ALL' && v.status !== statusFilter) return;
+
+                const img = v.mainImageUrl || (v.imageUrls && v.imageUrls[0]) || 'https://via.placeholder.com/400x250?text=Fotoğraf+Yok';
+
+                html += `
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div class="relative h-48 bg-slate-900">
+                                <img src="${img}" class="w-full h-full object-cover">
+                                <span class="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
+                                    ${v.status}
+                                </span>
+                                ${v.hasDamga ? '<span class="absolute top-3 left-3 bg-amber-500 text-slate-900 text-xs font-bold px-2.5 py-1 rounded-full">⭐ Damgalı</span>' : ''}
+                            </div>
+                            <div class="p-5 space-y-2">
+                                <h3 class="font-bold text-white text-lg">${v.brand} ${v.model}</h3>
+                                <p class="text-blue-400 font-bold text-xl">${v.price ? v.price.toLocaleString('tr-TR') + ' ₺' : 'Fiyat Belirtilmedi'}</p>
+                                <p class="text-xs text-slate-400">${v.year} • ${v.km ? v.km.toLocaleString('tr-TR') + ' KM' : ''} • ${v.fuelType || ''}</p>
+                                <p class="text-xs text-slate-500 truncate"><i class="fa-solid fa-store mr-1"></i> ${v.dealerName || 'Galeri'}</p>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-slate-900/60 border-t border-slate-700/60 flex items-center justify-between gap-2">
+                            ${v.status !== 'PUBLISHED' ? `<button onclick="updateVehicleStatus('${doc.id}', 'PUBLISHED')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition">Yayınla</button>` : ''}
+                            <button onclick="deleteVehicle('${doc.id}')" class="px-3 py-2 bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white text-xs font-semibold rounded-xl transition"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html || '<p class="text-slate-500 col-span-full text-center py-12">İlan bulunamadı.</p>';
+        }
+
+        async function updateVehicleStatus(vehicleId, status) {
+            await db.collection('vehicles').doc(vehicleId).update({ status: status });
+            loadDashboardData();
+            loadVehicles();
+        }
+
+        async function deleteVehicle(vehicleId) {
+            if (confirm('Bu ilanı silmek istediğinizden emin misiniz?')) {
+                await db.collection('vehicles').doc(vehicleId).delete();
+                loadDashboardData();
+                loadVehicles();
+            }
+        }
+
+        // LOAD REPORTS
+        async function loadReports() {
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-500">Yükleniyor...</td></tr>';
+
+            const snap = await db.collection('reports').get();
+            let html = '';
+
+            snap.forEach(doc => {
+                const r = doc.data();
+                html += `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="p-4 font-semibold text-white">${r.vehicleTitle || r.vehicleId || '—'}</td>
+                        <td class="p-4 text-slate-300">${r.reporterEmail || r.reporterUid || '—'}</td>
+                        <td class="p-4 text-amber-400">${r.reason || 'Sebep Belirtilmedi'}</td>
+                        <td class="p-4 text-xs text-slate-400">${r.createdAt ? new Date(r.createdAt).toLocaleDateString('tr-TR') : '—'}</td>
+                        <td class="p-4 text-right">
+                            ${!r.isResolved ? `<button onclick="resolveReport('${doc.id}')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">Çözüldü İşaretle</button>` : '<span class="text-xs text-emerald-400 font-semibold"><i class="fa-solid fa-check"></i> Çözüldü</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="5" class="p-8 text-center text-slate-500">Henüz bildirilmiş şikayet yok.</td></tr>';
+        }
+
+        async function resolveReport(reportId) {
+            await db.collection('reports').doc(reportId).update({ isResolved: true });
+            loadDashboardData();
+            loadReports();
+        }
+
+        // APP CONFIG
+        async function loadAppConfig() {
+            const doc = await db.collection('app_config').doc('version').get();
+            if (doc.exists) {
+                const cfg = doc.data();
+                document.getElementById('cfgLatestVersionCode').value = cfg.latestVersionCode || 10;
+                document.getElementById('cfgMinVersionCode').value = cfg.minVersionCode || 1;
+                document.getElementById('cfgLatestVersionName').value = cfg.latestVersionName || "1.0.9";
+                document.getElementById('cfgUpdateTitle').value = cfg.updateTitle || "Yeni Güncelleme Mevcut!";
+                document.getElementById('cfgUpdateMessage').value = cfg.updateMessage || "";
+                document.getElementById('cfgIsForceUpdate').checked = !!cfg.isForceUpdate;
+            }
+        }
+
+        async function saveAppConfig() {
+            const cfg = {
+                latestVersionCode: parseInt(document.getElementById('cfgLatestVersionCode').value) || 10,
+                minVersionCode: parseInt(document.getElementById('cfgMinVersionCode').value) || 1,
+                latestVersionName: document.getElementById('cfgLatestVersionName').value,
+                updateTitle: document.getElementById('cfgUpdateTitle').value,
+                updateMessage: document.getElementById('cfgUpdateMessage').value,
+                isForceUpdate: document.getElementById('cfgIsForceUpdate').checked
+            };
+
+            await db.collection('app_config').doc('version').set(cfg, { merge: true });
+            alert('Uygulama versiyon ayarları başarıyla kaydedildi!');
+        }
+    </script>
+</body>
+</html>

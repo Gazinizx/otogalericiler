@@ -80,4 +80,17 @@ actual class VehicleRepository actual constructor() {
         LocalStore.vehicles.remove(vehicleId)
         return Resource.Success(Unit)
     }
+
+    actual suspend fun deleteAllVehicles(): Resource<Unit> {
+        LocalStore.vehicles.clear()
+        LocalStore.dealers.values.forEach { d ->
+            LocalStore.dealers[d.id] = d.copy(
+                totalListings = 0,
+                activeListings = 0,
+                soldListings = 0,
+                pendingListings = 0
+            )
+        }
+        return Resource.Success(Unit)
+    }
 }

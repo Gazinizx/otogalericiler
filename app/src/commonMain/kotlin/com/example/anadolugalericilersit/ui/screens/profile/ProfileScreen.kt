@@ -197,10 +197,7 @@ fun ProfileScreen(
                 // Admin Panel Option if user has ADMIN or SUPER_ADMIN role
                 val showAdminButton = user?.role == Role.ADMIN ||
                         user?.role == Role.SUPER_ADMIN ||
-                        user?.canIssueDamga == true ||
-                        user?.email == "europexpert38@gmail.com" ||
-                        user?.email == "gazitasdemir46@gmail.com" ||
-                        user?.uid?.startsWith("admin") == true
+                        user?.canIssueDamga == true
 
                 if (showAdminButton) {
                     Card(

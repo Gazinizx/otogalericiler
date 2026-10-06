@@ -120,6 +120,30 @@ class AdminViewModel(
         }
     }
 
+    fun deleteVehicle(vehicleId: String) {
+        viewModelScope.launch {
+            _actionState.value = Resource.Loading()
+            val result = vehicleRepository.deleteVehicle(vehicleId)
+            _actionState.value = result
+            if (result is Resource.Success) {
+                loadVehicles()
+                loadStats()
+            }
+        }
+    }
+
+    fun deleteAllVehicles() {
+        viewModelScope.launch {
+            _actionState.value = Resource.Loading()
+            val result = vehicleRepository.deleteAllVehicles()
+            _actionState.value = result
+            if (result is Resource.Success) {
+                loadVehicles()
+                loadStats()
+            }
+        }
+    }
+
     fun updateVehicleDamgaStatus(vehicleId: String, approved: Boolean) {
         viewModelScope.launch {
             _actionState.value = Resource.Loading()

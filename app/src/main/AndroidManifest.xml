@@ -8,17 +8,17 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:name=".AnadoluApp"
+        android:name="com.example.anadolugalericilersit.AnadoluApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/img"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/img"
         android:supportsRtl="true"
         android:theme="@style/Theme.AnadoluGalericilerSit">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.anadolugalericilersit.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

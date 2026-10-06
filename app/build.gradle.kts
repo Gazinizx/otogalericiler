@@ -78,25 +78,29 @@ kotlin {
             implementation(libs.camerax.lifecycle)
             implementation(libs.camerax.view)
         }
-        
+
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+        }
+
         iosMain.dependencies {
         }
     }
 }
 
 android {
-    namespace = "com.example.anadolugalericilersit"
+    namespace = "com.anadolugalericilersitesi.app"
     compileSdk = 36
 
     sourceSets["main"].manifest.srcFile("src/main/AndroidManifest.xml")
     sourceSets["main"].res.srcDirs("src/main/res")
 
     defaultConfig {
-        applicationId = "com.example.anadolugalericilersit"
+        applicationId = "com.anadolugalericilersitesi.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 11
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -104,8 +108,18 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "anadolugalericiler"
+            keyAlias = "anadolu_key"
+            keyPassword = "anadolugalericiler"
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

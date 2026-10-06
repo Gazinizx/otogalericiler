@@ -22,10 +22,16 @@ import androidx.compose.ui.unit.sp
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.StampCodeRequest
 import com.example.anadolugalericilersit.data.model.DamgaStatus
+import com.example.anadolugalericilersit.data.model.NotificationItem
 import com.example.anadolugalericilersit.data.model.Role
+import com.example.anadolugalericilersit.data.repository.DealerRepository
+import com.example.anadolugalericilersit.data.repository.NotificationRepository
+import com.example.anadolugalericilersit.data.repository.VehicleRepository
 import com.example.anadolugalericilersit.utils.CameraQrScannerDialog
 import com.example.anadolugalericilersit.utils.IntentUtils
 import com.example.anadolugalericilersit.utils.QRCodeUtils
+import com.example.anadolugalericilersit.utils.currentTimeMillis
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +44,7 @@ fun AdminDamgaScreen(
     var showCameraScanner by remember { mutableStateOf(false) }
     var lastScannedQrResult by remember { mutableStateOf<String?>(null) }
     var verifiedStampRequest by remember { mutableStateOf<StampCodeRequest?>(null) }
+    val scope = rememberCoroutineScope()
 
     val currentLoggedInUid = LocalStore.currentLoggedInUid
     val currentUser = currentLoggedInUid?.let { LocalStore.users[it] }
@@ -191,28 +198,47 @@ fun AdminDamgaScreen(
                                         if (!canIssue) {
                                             ToastUtils.showToast(message = "Yetkiniz bulunmuyor.")
                                         } else {
-                                            // Find dealer's vehicles and approve damga
-                                            val dealerVehiclesToStamp = LocalStore.vehicles.values.filter { it.dealerId == req.dealerId && !it.hasDamga }
-                                            if (dealerVehiclesToStamp.isNotEmpty()) {
-                                                for (v in dealerVehiclesToStamp) {
-                                                    LocalStore.vehicles[v.id] = v.copy(
+                                            scope.launch {
+                                                val dId = req.dealerId
+                                                val dealerObj = LocalStore.dealers[dId] ?: DealerRepository().getDealerById(dId).data
+                                                val newDamgaCount = ((dealerObj?.damgaCount) ?: 0) + 1
+
+                                                if (dealerObj != null) {
+                                                    val updatedDealer = dealerObj.copy(damgaCount = newDamgaCount)
+                                                    LocalStore.dealers[dId] = updatedDealer
+                                                }
+                                                DealerRepository().updateDamgaCount(dId, newDamgaCount)
+
+                                                // Find dealer's vehicles and approve damga
+                                                val dealerVehiclesToStamp = LocalStore.vehicles.values.filter { it.dealerId == dId && !it.hasDamga }
+                                                val vehiclesToUpdate = if (dealerVehiclesToStamp.isNotEmpty()) dealerVehiclesToStamp else LocalStore.vehicles.values.filter { it.dealerId == dId }
+                                                for (v in vehiclesToUpdate) {
+                                                    val updatedV = v.copy(
                                                         damgaStatus = DamgaStatus.APPROVED,
                                                         hasDamga = true
                                                     )
+                                                    LocalStore.vehicles[v.id] = updatedV
+                                                    VehicleRepository().updateVehicleDamgaStatus(v.id, DamgaStatus.APPROVED.name, true)
                                                 }
-                                            } else {
-                                                val allDealerVehicles = LocalStore.vehicles.values.filter { it.dealerId == req.dealerId }
-                                                for (v in allDealerVehicles) {
-                                                    LocalStore.vehicles[v.id] = v.copy(
-                                                        damgaStatus = DamgaStatus.APPROVED,
-                                                        hasDamga = true
-                                                    )
-                                                }
+
+                                                req.isUsed = true
+                                                LocalStore.stampCodes[req.code] = req
+
+                                                val notifItem = NotificationItem(
+                                                    userId = dealerObj?.ownerUid?.ifBlank { dId } ?: dId,
+                                                    title = "Damganız Onaylandı! 🎉",
+                                                    message = "${req.galleryName} galerinize 1 yeni damga basıldı. Güncel Damga Sayınız: $newDamgaCount",
+                                                    type = "DAMGA",
+                                                    targetId = dId,
+                                                    isRead = false,
+                                                    createdAt = currentTimeMillis()
+                                                )
+                                                NotificationRepository().sendNotification(notifItem)
+
+                                                ToastUtils.showToast(message = "QR Kod doğrulandı ve damga başarıyla basıldı!")
+                                                refreshTrigger++
+                                                verifiedStampRequest = null
                                             }
-                                            req.isUsed = true
-                                            ToastUtils.showToast(message = "QR Kod doğrulandı ve damga başarıyla basıldı!")
-                                            refreshTrigger++
-                                            verifiedStampRequest = null
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),

@@ -99,6 +99,32 @@ fun AdminVehiclesScreen(
         )
     }
 
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("Tüm İlanları Sil") },
+            text = { Text("Veritabanındaki ve uygulamadaki BÜTÜN ilanlar kalıcı olarak silinecektir. Emin misiniz?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        adminViewModel.deleteAllVehicles()
+                        showDeleteAllDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Evet, Hepsini Sil")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) {
+                    Text("İptal")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -106,6 +132,11 @@ fun AdminVehiclesScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Geri")
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { showDeleteAllDialog = true }) {
+                        Text("Tümünü Sil", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -258,6 +289,16 @@ fun AdminVehiclesScreen(
                                             ) {
                                                 Text("Yayınla")
                                             }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        OutlinedButton(
+                                            onClick = {
+                                                adminViewModel.deleteVehicle(vehicle.id)
+                                            },
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                        ) {
+                                            Text("Sil")
                                         }
                                     }
                                 }

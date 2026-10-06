@@ -17,10 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.anadolugalericilersit.data.local.DebtTransaction
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.TransactionType
 import com.example.anadolugalericilersit.data.model.Dealer
+import com.example.anadolugalericilersit.data.repository.DealerRepository
 import com.example.anadolugalericilersit.utils.IntentUtils
+import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,19 +32,21 @@ fun DealerDebtScreen(
     dealer: Dealer?,
     onBackClick: () -> Unit
 ) {
-    val currentDealer = remember(dealer) {
-        if (dealer != null) {
-            LocalStore.dealers[dealer.id] ?: dealer
-        } else {
-            null
-        }
-    }
+    var currentDealer by remember { mutableStateOf<Dealer?>(dealer ?: LocalStore.currentLoggedInUid?.let { LocalStore.dealers[it] }) }
+    var transactions by remember { mutableStateOf<List<DebtTransaction>>(emptyList()) }
+    val dealerRepo = remember { DealerRepository() }
 
-    val transactions = remember(currentDealer) {
-        if (currentDealer != null) {
-            LocalStore.debtTransactions[currentDealer.id] ?: emptyList()
+    LaunchedEffect(dealer) {
+        val dId = dealer?.id ?: LocalStore.currentLoggedInUid ?: return@LaunchedEffect
+        val dRes = dealerRepo.getDealerById(dId)
+        if (dRes is Resource.Success && dRes.data != null) {
+            currentDealer = dRes.data
+        }
+        val txRes = dealerRepo.getDebtTransactions(dId)
+        if (txRes is Resource.Success && txRes.data != null) {
+            transactions = txRes.data!!
         } else {
-            emptyList()
+            transactions = LocalStore.debtTransactions[dId] ?: emptyList()
         }
     }
 
@@ -68,12 +73,13 @@ fun DealerDebtScreen(
                     Text("Galerici profili bulunamadı.")
                 }
             } else {
+                val dealerObj = currentDealer!!
                 // Debt Overview Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (currentDealer.totalDebt > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
+                        containerColor = if (dealerObj.totalDebt > 0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
                     )
                 ) {
                     Column(
@@ -83,7 +89,7 @@ fun DealerDebtScreen(
                         Icon(
                             imageVector = Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = if (currentDealer.totalDebt > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = if (dealerObj.totalDebt > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(36.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -92,16 +98,16 @@ fun DealerDebtScreen(
                             text = "Güncel Borç Tutarınız",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (currentDealer.totalDebt > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+                            color = if (dealerObj.totalDebt > 0) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "${currentDealer.totalDebt.toInt()} ₺",
+                            text = "${dealerObj.totalDebt.toInt()} ₺",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (currentDealer.totalDebt > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            color = if (dealerObj.totalDebt > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -109,8 +115,8 @@ fun DealerDebtScreen(
                         // WhatsApp Payment Button to 05054543099
                         Button(
                             onClick = {
-                                val galleryName = currentDealer.galleryName
-                                val debt = currentDealer.totalDebt.toInt()
+                                val galleryName = dealerObj.galleryName
+                                val debt = dealerObj.totalDebt.toInt()
                                 val message = "Merhaba, $galleryName galeri hesabımdan borç ödemesi yapmak istiyorum. Güncel Borç Tutarım: $debt TL"
                                 IntentUtils.openWhatsApp(phone = "05054543099", message = message)
                             },

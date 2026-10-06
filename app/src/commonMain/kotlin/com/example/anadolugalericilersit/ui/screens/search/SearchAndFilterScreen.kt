@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.anadolugalericilersit.data.model.Vehicle
@@ -55,6 +57,9 @@ fun SearchAndFilterScreen(
     var selectedSort by remember { mutableStateOf(VehicleSort.NEWEST) }
 
     var showFilterSheet by remember { mutableStateOf(false) }
+    var showBrandFilterDialog by remember { mutableStateOf(false) }
+    var showModelFilterDialog by remember { mutableStateOf(false) }
+    var showCityFilterDialog by remember { mutableStateOf(false) }
 
     fun triggerSearch() {
         val filter = VehicleFilter(
@@ -81,7 +86,7 @@ fun SearchAndFilterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Araç Arama & Filtreleme") },
+                title = { Text("Araç Arama & Detaylı Filtreleme") },
                 actions = {
                     IconButton(onClick = { showFilterSheet = true }) {
                         Icon(Icons.Default.FilterList, contentDescription = "Filtrele")
@@ -102,7 +107,7 @@ fun SearchAndFilterScreen(
                     searchQuery = it
                     triggerSearch()
                 },
-                placeholder = { Text("Marka, model, ilan başlığı ara...") },
+                placeholder = { Text("Marka, model, şehir veya ilan No ara...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -134,7 +139,10 @@ fun SearchAndFilterScreen(
                 ) {
                     Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Detaylı Filtre")
+                    Text(
+                        text = if (selectedBrand != null || selectedCity != null || minPrice.isNotBlank()) "Filtre Aktif ✓" else "Detaylı Filtre",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 // Sort Dropdown
@@ -243,6 +251,66 @@ fun SearchAndFilterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Brand Filter Field
+                Text("Marka Filtresi", fontWeight = FontWeight.SemiBold)
+                OutlinedTextField(
+                    value = selectedBrand ?: "Tüm Markalar",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Marka Seçin") },
+                    trailingIcon = {
+                        IconButton(onClick = { showBrandFilterDialog = true }) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showBrandFilterDialog = true },
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Model Filter Field
+                Text("Model Filtresi", fontWeight = FontWeight.SemiBold)
+                OutlinedTextField(
+                    value = selectedModel ?: "Tüm Modeller",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Model Seçin") },
+                    trailingIcon = {
+                        IconButton(onClick = { showModelFilterDialog = true }) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showModelFilterDialog = true },
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // City Filter Field
+                Text("Şehir Filtresi", fontWeight = FontWeight.SemiBold)
+                OutlinedTextField(
+                    value = selectedCity ?: "Tüm Şehirler",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Şehir Seçin") },
+                    trailingIcon = {
+                        IconButton(onClick = { showCityFilterDialog = true }) {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showCityFilterDialog = true },
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 // Price Range
                 Text("Fiyat Aralığı (₺)", fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -251,35 +319,39 @@ fun SearchAndFilterScreen(
                         onValueChange = { minPrice = it },
                         label = { Text("Min Fiyat") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                     OutlinedTextField(
                         value = maxPrice,
                         onValueChange = { maxPrice = it },
                         label = { Text("Maks Fiyat") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Year Range
-                Text("Yıl Aralığı", fontWeight = FontWeight.SemiBold)
+                Text("Model Yılı Aralığı", fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = minYear,
                         onValueChange = { minYear = it },
                         label = { Text("Min Yıl") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                     OutlinedTextField(
                         value = maxYear,
                         onValueChange = { maxYear = it },
                         label = { Text("Maks Yıl") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
 
@@ -293,14 +365,16 @@ fun SearchAndFilterScreen(
                         onValueChange = { minKm = it },
                         label = { Text("Min KM") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                     OutlinedTextField(
                         value = maxKm,
                         onValueChange = { maxKm = it },
                         label = { Text("Maks KM") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
 
@@ -311,13 +385,111 @@ fun SearchAndFilterScreen(
                         triggerSearch()
                         showFilterSheet = false
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Sonuçları Göster")
+                    Text("Sonuçları Göster", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
+
+    if (showBrandFilterDialog) {
+        val brandsWithAll = listOf("Tüm Markalar") + Constants.BRANDS_WITH_MODELS.keys.toList()
+        SearchableFilterDialog(
+            title = "Marka Seçin",
+            items = brandsWithAll,
+            onItemSelected = { b ->
+                selectedBrand = if (b == "Tüm Markalar") null else b
+                selectedModel = null
+                showBrandFilterDialog = false
+            },
+            onDismissRequest = { showBrandFilterDialog = false }
+        )
+    }
+
+    if (showModelFilterDialog) {
+        val modelsList = if (selectedBrand != null) {
+            listOf("Tüm Modeller") + (Constants.BRANDS_WITH_MODELS[selectedBrand] ?: emptyList())
+        } else {
+            listOf("Tüm Modeller") + Constants.BRANDS_WITH_MODELS.values.flatten().distinct()
+        }
+        SearchableFilterDialog(
+            title = "Model Seçin",
+            items = modelsList,
+            onItemSelected = { m ->
+                selectedModel = if (m == "Tüm Modeller") null else m
+                showModelFilterDialog = false
+            },
+            onDismissRequest = { showModelFilterDialog = false }
+        )
+    }
+
+    if (showCityFilterDialog) {
+        val citiesWithAll = listOf("Tüm Şehirler") + Constants.CITIES
+        SearchableFilterDialog(
+            title = "Şehir Seçin",
+            items = citiesWithAll,
+            onItemSelected = { c ->
+                selectedCity = if (c == "Tüm Şehirler") null else c
+                showCityFilterDialog = false
+            },
+            onDismissRequest = { showCityFilterDialog = false }
+        )
+    }
+}
+
+@Composable
+fun SearchableFilterDialog(
+    title: String,
+    items: List<String>,
+    onItemSelected: (String) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredItems = remember(searchQuery, items) {
+        if (searchQuery.isBlank()) items else items.filter { it.contains(searchQuery, ignoreCase = true) }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(title, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Ara...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                )
+
+                if (filteredItems.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Text("Sonuç bulunamadı.")
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(filteredItems) { item ->
+                            TextButton(
+                                onClick = {
+                                    onItemSelected(item)
+                                    onDismissRequest()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(item, fontSize = 15.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) { Text("Kapat") }
+        }
+    )
 }

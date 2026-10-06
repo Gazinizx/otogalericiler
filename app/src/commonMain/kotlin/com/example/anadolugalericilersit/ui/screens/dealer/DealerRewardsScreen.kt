@@ -24,7 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.StampCodeRequest
 import com.example.anadolugalericilersit.data.model.Dealer
+import com.example.anadolugalericilersit.data.repository.DealerRepository
 import com.example.anadolugalericilersit.utils.QRCodeUtils
+import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.generateUuid
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,24 +37,41 @@ fun DealerRewardsScreen(
 ) {
     var refreshTrigger by remember { mutableStateOf(0) }
     var selectedTab by remember { mutableStateOf(0) } // 0: Damgalarım & Ödüller, 1: Damga QR Kodu Üret
+    var currentDealer by remember { mutableStateOf(dealer ?: LocalStore.currentLoggedInUid?.let { LocalStore.dealers[it] }) }
 
-    val dealerVehicles = remember(dealer, refreshTrigger) {
-        if (dealer != null) {
-            LocalStore.vehicles.values.filter { it.dealerId == dealer.id && it.hasDamga }
+    LaunchedEffect(dealer, refreshTrigger) {
+        val dId = dealer?.id ?: LocalStore.currentLoggedInUid ?: return@LaunchedEffect
+        val res = DealerRepository().getDealerById(dId)
+        if (res is Resource.Success && res.data != null) {
+            currentDealer = res.data
+        }
+    }
+
+    val dealerVehicles = remember(currentDealer, refreshTrigger) {
+        if (currentDealer != null) {
+            LocalStore.vehicles.values.filter { it.dealerId == currentDealer!!.id && it.hasDamga }
         } else {
             emptyList()
         }
     }
 
-    val dealerStampCodes = remember(dealer, refreshTrigger) {
-        if (dealer != null) {
-            LocalStore.stampCodes.values.filter { it.dealerId == dealer.id }
+    val dealerStampCodes = remember(currentDealer, refreshTrigger) {
+        if (currentDealer != null) {
+            LocalStore.stampCodes.values.filter { it.dealerId == currentDealer!!.id }
         } else {
             emptyList()
         }
     }
 
-    val damgaCount = dealerVehicles.size
+    val approvedStampCodesCount = remember(currentDealer, refreshTrigger) {
+        if (currentDealer != null) {
+            LocalStore.stampCodes.values.count { it.dealerId == currentDealer!!.id && it.isUsed }
+        } else {
+            0
+        }
+    }
+
+    val damgaCount = maxOf(currentDealer?.damgaCount ?: 0, approvedStampCodesCount, dealerVehicles.size)
     val targetDamga = 6
     val progress = (damgaCount.toFloat() / targetDamga.toFloat()).coerceIn(0f, 1f)
 
@@ -118,6 +137,14 @@ fun DealerRewardsScreen(
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
+                                if ((currentDealer?.rewardCycleCount ?: 0) > 0) {
+                                    Text(
+                                        text = "🏆 ${currentDealer?.rewardCycleCount} Defa 6 Damga Tamamlandı!",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
 

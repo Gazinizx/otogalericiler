@@ -18,6 +18,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.components.LoadingDialog
 import com.example.anadolugalericilersit.ui.viewmodel.AuthViewModel
 import com.example.anadolugalericilersit.utils.Resource
@@ -58,11 +61,12 @@ fun LoginScreen(
 
     if (showForgotPasswordDialog) {
         ForgotPasswordDialog(
+            initialEmail = email,
             onDismiss = { showForgotPasswordDialog = false },
             onSend = { resetEmail ->
                 authViewModel.resetPassword(resetEmail) { errorMsg ->
                     if (errorMsg == null) {
-                        ToastUtils.showToast(message = "Şifre sıfırlama e-postası gönderildi.")
+                        ToastUtils.showToast(message = "Şifre sıfırlama bağlantısı $resetEmail adresine gönderildi. Lütfen e-postanızı (Gmail) kontrol edin.")
                         showForgotPasswordDialog = false
                     } else {
                         ToastUtils.showToast(message = errorMsg)
@@ -87,15 +91,16 @@ fun LoginScreen(
             // App Logo Icon
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(20.dp))
                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(20.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.DirectionsCar,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
+                AppAsyncImage(
+                    model = "drawable/img.png",
+                    contentDescription = "Anadolu Galericiler Sitesi Logo",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 

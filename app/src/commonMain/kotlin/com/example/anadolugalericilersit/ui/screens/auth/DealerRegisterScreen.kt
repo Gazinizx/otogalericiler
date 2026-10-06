@@ -96,10 +96,31 @@ fun DealerRegisterScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // App Logo Header
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                AppAsyncImage(
+                    model = "drawable/img.png",
+                    contentDescription = "Anadolu Galericiler Sitesi Logo",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text("Galeri Logosu Seçin", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+
             // Logo Picker
             Box(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(90.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .clickable { imagePicker() },
@@ -113,18 +134,12 @@ fun DealerRegisterScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.AddAPhoto,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = "Logo Ekle",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
+                    AppAsyncImage(
+                        model = "drawable/img.png",
+                        contentDescription = "Varsayılan Galeri Logosu",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
 

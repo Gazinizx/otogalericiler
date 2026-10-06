@@ -51,9 +51,10 @@ fun DealerCard(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                if (dealer.logoUrl.isNotBlank()) {
+                val displayImage = dealer.shopPhotoUrl.ifBlank { dealer.profilePhotoUrl.ifBlank { dealer.logoUrl } }
+                if (displayImage.isNotBlank()) {
                     AppAsyncImage(
-                        model = dealer.logoUrl,
+                        model = displayImage,
                         contentDescription = dealer.galleryName,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

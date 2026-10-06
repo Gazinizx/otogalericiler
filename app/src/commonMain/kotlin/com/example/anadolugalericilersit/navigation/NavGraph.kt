@@ -60,10 +60,7 @@ fun AnadoluNavGraph(
     val isApprovedDealer = currentDealer?.accountStatus == DealerStatus.APPROVED
     val isAdmin = currentUser?.role == Role.ADMIN ||
             currentUser?.role == Role.SUPER_ADMIN ||
-            currentUser?.canIssueDamga == true ||
-            currentUser?.email == "europexpert38@gmail.com" ||
-            currentUser?.email == "gazitasdemir46@gmail.com" ||
-            currentUser?.uid?.startsWith("admin") == true
+            currentUser?.canIssueDamga == true
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -102,10 +99,7 @@ fun AnadoluNavGraph(
                         val user = authViewModel.authState.value.data
                         val adminCheck = user?.role == Role.ADMIN ||
                                 user?.role == Role.SUPER_ADMIN ||
-                                user?.canIssueDamga == true ||
-                                user?.email == "europexpert38@gmail.com" ||
-                                user?.email == "gazitasdemir46@gmail.com" ||
-                                user?.uid?.startsWith("admin") == true
+                                user?.canIssueDamga == true
                         if (adminCheck) {
                             navController.navigate(Screen.AdminDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }

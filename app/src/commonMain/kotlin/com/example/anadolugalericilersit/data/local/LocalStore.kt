@@ -42,25 +42,7 @@ data class DebtTransaction(
 object LocalStore {
     var currentLoggedInUid: String? = null
 
-    val users = mutableMapOf<String, User>(
-        "admin_europexpert" to User(
-            uid = "admin_europexpert",
-            email = "europexpert38@gmail.com",
-            password = "369369",
-            name = "EuropExpert Admin",
-            role = Role.SUPER_ADMIN,
-            canIssueDamga = true
-        ),
-        "admin_gazitasdemir" to User(
-            uid = "admin_gazitasdemir",
-            email = "gazitasdemir46@gmail.com",
-            password = "369369",
-            name = "Gazi Taşdemir Admin",
-            role = Role.SUPER_ADMIN,
-            canIssueDamga = true
-        )
-    )
-
+    val users = mutableMapOf<String, User>()
     val dealers = mutableMapOf<String, Dealer>()
 
     val vehicles = mutableMapOf<String, Vehicle>()

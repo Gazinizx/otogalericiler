@@ -7,6 +7,7 @@ import com.example.anadolugalericilersit.data.model.Role
 import com.example.anadolugalericilersit.data.model.User
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.SessionManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
@@ -17,148 +18,78 @@ actual class AuthRepository actual constructor() {
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     actual fun isUserLoggedIn(): Boolean {
+        if (FirebaseAuth.getInstance().currentUser != null) return true
         if (LocalStore.currentLoggedInUid != null) return true
         val savedUid = SessionManager.getSavedUid()
         return !savedUid.isNullOrBlank()
     }
 
     fun getCurrentUid(): String? {
-        return LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        return FirebaseAuth.getInstance().currentUser?.uid
+            ?: LocalStore.currentLoggedInUid
+            ?: SessionManager.getSavedUid()
     }
 
     actual suspend fun login(email: String, password: String): Resource<User> {
         return try {
             val cleanEmail = email.trim()
             val cleanPass = password.trim()
-            val normalizedInput = cleanEmail.lowercase().replace(" ", "")
 
             if (cleanEmail.isBlank() || cleanPass.isBlank()) {
-                return Resource.Error("E-posta/Telefon ve şifre boş bırakılamaz")
+                return Resource.Error("E-posta ve şifre boş bırakılamaz")
             }
 
-            val isAdmin1Input = normalizedInput == "europexpert38@gmail.com" ||
-                    normalizedInput == "europexpert38"
-
-            if (isAdmin1Input) {
-                if (cleanPass != "369369") {
-                    return Resource.Error("Girilen şifre hatalı!")
+            // 1. Authenticate with Firebase Auth
+            val authResult = try {
+                FirebaseAuth.getInstance().signInWithEmailAndPassword(cleanEmail, cleanPass).await()
+            } catch (e: Exception) {
+                val rawMsg = e.message?.lowercase() ?: ""
+                val msg = when {
+                    rawMsg.contains("invalid-credential") || rawMsg.contains("wrong-password") || rawMsg.contains("user-not-found") || rawMsg.contains("no user record") || rawMsg.contains("invalid credential") -> "Geçersiz e-posta adresi veya şifre."
+                    rawMsg.contains("invalid-email") || rawMsg.contains("badly formatted") -> "Geçersiz e-posta adresi biçimi."
+                    rawMsg.contains("user-disabled") -> "Bu kullanıcı hesabı askıya alınmıştır."
+                    rawMsg.contains("too-many-requests") -> "Çok fazla hatalı deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyiniz."
+                    rawMsg.contains("network") || rawMsg.contains("connection") -> "İnternet bağlantısı bulunamadı. Lütfen bağlantınızı kontrol ediniz."
+                    else -> "Geçersiz e-posta adresi veya şifre."
                 }
+                return Resource.Error(msg)
+            }
 
-                val adminUser = User(
-                    uid = "admin_europexpert",
-                    email = "europexpert38@gmail.com",
-                    password = "369369",
-                    name = "EuropExpert Admin",
-                    role = Role.SUPER_ADMIN,
-                    canIssueDamga = true
+            val firebaseUser = authResult.user ?: return Resource.Error("Kullanıcı oturumu açılamadı")
+            val uid = firebaseUser.uid
+
+            // 2. Fetch user profile from Firestore users/{uid}
+            val userDoc = firestore.collection("users").document(uid).get().await()
+            var user = userDoc.toObject(User::class.java)
+
+            if (user == null) {
+                user = User(
+                    uid = uid,
+                    email = cleanEmail,
+                    password = "", // Never store password in Firestore
+                    name = cleanEmail,
+                    role = Role.DEALER,
+                    dealerId = uid
                 )
-                LocalStore.users["admin_europexpert"] = adminUser
-                LocalStore.currentLoggedInUid = adminUser.uid
-                SessionManager.saveSession(adminUser.uid)
-
-                try {
-                    firestore.collection("users").document(adminUser.uid).set(adminUser).await()
-                } catch (_: Exception) {
-                    // ignore firestore sync errors offline
-                }
-
-                return Resource.Success(adminUser)
+                firestore.collection("users").document(uid).set(user).await()
             }
 
-            val isAdmin2Input = normalizedInput == "gazitasdemir46@gmail.com" ||
-                    normalizedInput == "gazitasdemir46"
+            LocalStore.users[uid] = user
+            LocalStore.currentLoggedInUid = uid
+            SessionManager.saveSession(uid)
 
-            if (isAdmin2Input) {
-                if (cleanPass != "369369") {
-                    return Resource.Error("Girilen şifre hatalı!")
-                }
-
-                val adminUser = User(
-                    uid = "admin_gazitasdemir",
-                    email = "gazitasdemir46@gmail.com",
-                    password = "369369",
-                    name = "Gazi Taşdemir Admin",
-                    role = Role.SUPER_ADMIN,
-                    canIssueDamga = true
-                )
-                LocalStore.users["admin_gazitasdemir"] = adminUser
-                LocalStore.currentLoggedInUid = adminUser.uid
-                SessionManager.saveSession(adminUser.uid)
-
-                try {
-                    firestore.collection("users").document(adminUser.uid).set(adminUser).await()
-                } catch (_: Exception) {
-                    // ignore firestore sync errors offline
-                }
-
-                return Resource.Success(adminUser)
-            }
-
-            val localUser = LocalStore.users.values.find {
-                it.email.equals(cleanEmail, ignoreCase = true) ||
-                        it.uid == cleanEmail
-            }
-            if (localUser != null) {
-                if (localUser.password.isNotBlank() && localUser.password != cleanPass) {
-                    return Resource.Error("Girilen şifre hatalı!")
-                }
-                LocalStore.currentLoggedInUid = localUser.uid
-                SessionManager.saveSession(localUser.uid)
-                return Resource.Success(localUser)
-            }
-
-            try {
-                val queryByEmail = firestore.collection("users")
-                    .whereEqualTo("email", cleanEmail)
-                    .get()
-                    .await()
-
-                var doc = queryByEmail.documents.firstOrNull()
-
-                if (doc == null || !doc.exists()) {
-                    val dealerQuery = firestore.collection("dealers")
-                        .whereEqualTo("email", cleanEmail)
-                        .get()
-                        .await()
-                    doc = dealerQuery.documents.firstOrNull()
-                }
-
-                if (doc != null && doc.exists()) {
-                    var user = doc.toObject(User::class.java)
-                    if (user != null) {
-                        if (user.password.isNotBlank() && user.password != cleanPass) {
-                            return Resource.Error("Girilen şifre hatalı!")
-                        }
-
-                        if (user.email == "europexpert38@gmail.com" ||
-                            user.email == "gazitasdemir46@gmail.com"
-                        ) {
-                            user = user.copy(role = Role.SUPER_ADMIN, canIssueDamga = true)
-                        }
-
-                        LocalStore.users[user.uid] = user
-                        LocalStore.currentLoggedInUid = user.uid
-                        SessionManager.saveSession(user.uid)
-
-                        val dealerId = user.dealerId
-                        if (!dealerId.isNullOrBlank()) {
-                            val dealerDoc = firestore.collection("dealers").document(dealerId).get().await()
-                            if (dealerDoc.exists()) {
-                                val dealer = dealerDoc.toObject(Dealer::class.java)
-                                if (dealer != null) {
-                                    LocalStore.dealers[dealerId] = dealer
-                                }
-                            }
-                        }
-
-                        return Resource.Success(user)
+            // Load dealer profile if dealer
+            if (user.role == Role.DEALER) {
+                val dealerDoc = firestore.collection("dealers").document(uid).get().await()
+                if (dealerDoc.exists()) {
+                    val dealer = dealerDoc.toObject(Dealer::class.java)
+                    if (dealer != null) {
+                        LocalStore.dealers[uid] = dealer
                     }
                 }
-            } catch (_: Exception) {
-                // proceed if query fails
             }
 
-            Resource.Error("Girilen e-posta adresi veya kullanıcı bulunamadı! Lütfen önce kayıt olun.")
+            Resource.Success(user)
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage ?: "Giriş yapılırken hata oluştu")
         }
@@ -181,14 +112,41 @@ actual class AuthRepository actual constructor() {
         logoUri: Any?
     ): Resource<Dealer> {
         return try {
-            val uid = UUID.randomUUID().toString()
+            val cleanEmail = email.trim()
+            val cleanPass = password.trim()
+
+            if (cleanEmail.isBlank() || cleanPass.isBlank() || galleryName.isBlank()) {
+                return Resource.Error("Lütfen e-posta, şifre ve galeri adını doldurun")
+            }
+            if (cleanPass.length < 6) {
+                return Resource.Error("Şifre en az 6 karakter olmalıdır")
+            }
+
+            // 1. Register with Firebase Authentication
+            val authResult = try {
+                FirebaseAuth.getInstance().createUserWithEmailAndPassword(cleanEmail, cleanPass).await()
+            } catch (e: Exception) {
+                val rawMsg = e.message?.lowercase() ?: ""
+                val msg = when {
+                    rawMsg.contains("email-already-in-use") || rawMsg.contains("already in use") -> "Bu e-posta adresi zaten kullanımda."
+                    rawMsg.contains("weak-password") || rawMsg.contains("weak password") -> "Şifre çok zayıf (en az 6 karakter olmalıdır)."
+                    rawMsg.contains("invalid-email") || rawMsg.contains("badly formatted") -> "Geçersiz e-posta adresi biçimi."
+                    rawMsg.contains("network") || rawMsg.contains("connection") -> "İnternet bağlantısı bulunamadı."
+                    else -> "Kayıt olunurken bir hata oluştu. Lütfen bilgilerinizi kontrol ediniz."
+                }
+                return Resource.Error(msg)
+            }
+
+            val firebaseUser = authResult.user ?: return Resource.Error("Kullanıcı oluşturulamadı")
+            val uid = firebaseUser.uid
+
             val dealer = Dealer(
                 id = uid,
                 ownerUid = uid,
                 galleryName = galleryName,
                 authorizedName = authorizedName,
                 phone = phone,
-                email = email,
+                email = cleanEmail,
                 city = city.ifBlank { "Kayseri" },
                 district = district.ifBlank { "Kocasinan" },
                 address = address,
@@ -200,10 +158,11 @@ actual class AuthRepository actual constructor() {
                 accountStatus = DealerStatus.PENDING
             )
 
+            // CRITICAL: NEVER store password in Firestore!
             val user = User(
                 uid = uid,
-                email = email,
-                password = hashPassword(password),
+                email = cleanEmail,
+                password = "", 
                 name = galleryName,
                 role = Role.DEALER,
                 dealerId = uid
@@ -214,12 +173,9 @@ actual class AuthRepository actual constructor() {
             LocalStore.currentLoggedInUid = uid
             SessionManager.saveSession(uid, context)
 
-            try {
-                firestore.collection("dealers").document(uid).set(dealer).await()
-                firestore.collection("users").document(uid).set(user).await()
-            } catch (_: Exception) {
-                // ignore firestore sync errors if offline
-            }
+            // Save profile data to Firestore
+            firestore.collection("dealers").document(uid).set(dealer).await()
+            firestore.collection("users").document(uid).set(user).await()
 
             Resource.Success(dealer)
         } catch (e: Exception) {
@@ -229,9 +185,20 @@ actual class AuthRepository actual constructor() {
 
     actual suspend fun resetPassword(email: String): Resource<Unit> {
         return try {
+            val cleanEmail = email.trim()
+            if (cleanEmail.isBlank()) {
+                return Resource.Error("Lütfen e-posta adresinizi giriniz.")
+            }
+            FirebaseAuth.getInstance().sendPasswordResetEmail(cleanEmail).await()
             Resource.Success(Unit)
         } catch (e: Exception) {
-            Resource.Error(e.localizedMessage ?: "Şifre sıfırlama başarısız")
+            val rawMsg = e.message?.lowercase() ?: ""
+            val msg = when {
+                rawMsg.contains("user-not-found") || rawMsg.contains("no user record") -> "Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı."
+                rawMsg.contains("invalid-email") || rawMsg.contains("badly formatted") -> "Geçersiz e-posta adresi biçimi."
+                else -> e.localizedMessage ?: "Şifre sıfırlama e-postası gönderilemedi."
+            }
+            Resource.Error(msg)
         }
     }
 
@@ -240,49 +207,24 @@ actual class AuthRepository actual constructor() {
     }
 
     actual suspend fun getCurrentUser(): Resource<User> {
-        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: LocalStore.currentLoggedInUid
+            ?: SessionManager.getSavedUid()
+
         if (uid.isNullOrBlank()) return Resource.Error("Oturum açık değil")
         val safeUid: String = uid
 
         val localUser = LocalStore.users[safeUid]
         if (localUser != null) {
             LocalStore.currentLoggedInUid = safeUid
-            if (localUser.email == "europexpert38@gmail.com" ||
-                localUser.email == "gazitasdemir46@gmail.com" ||
-                safeUid.startsWith("admin")
-            ) {
-                val updated = localUser.copy(role = Role.SUPER_ADMIN, canIssueDamga = true)
-                LocalStore.users[safeUid] = updated
-                return Resource.Success(updated)
-            }
             return Resource.Success(localUser)
-        }
-
-        if (safeUid == "admin_europexpert" || safeUid == "admin_gazitasdemir") {
-            val is1 = safeUid == "admin_europexpert"
-            val adminUser = User(
-                uid = safeUid,
-                email = if (is1) "europexpert38@gmail.com" else "gazitasdemir46@gmail.com",
-                name = if (is1) "EuropExpert Admin" else "Gazi Taşdemir Admin",
-                role = Role.SUPER_ADMIN,
-                canIssueDamga = true
-            )
-            LocalStore.users[safeUid] = adminUser
-            LocalStore.currentLoggedInUid = safeUid
-            return Resource.Success(adminUser)
         }
 
         return try {
             val doc = firestore.collection("users").document(safeUid).get().await()
             if (doc.exists()) {
-                var user = doc.toObject(User::class.java)
+                val user = doc.toObject(User::class.java)
                 if (user != null) {
-                    if (user.email == "europexpert38@gmail.com" ||
-                        user.email == "gazitasdemir46@gmail.com"
-                    ) {
-                        user = user.copy(role = Role.SUPER_ADMIN, canIssueDamga = true)
-                    }
-
                     LocalStore.users[safeUid] = user
                     LocalStore.currentLoggedInUid = safeUid
                     return Resource.Success(user)
@@ -295,22 +237,17 @@ actual class AuthRepository actual constructor() {
     }
 
     actual suspend fun getCurrentDealerProfile(): Resource<Dealer> {
-        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: LocalStore.currentLoggedInUid
+            ?: SessionManager.getSavedUid()
+
         if (uid.isNullOrBlank()) return Resource.Error("Oturum açık değil")
         val safeUid: String = uid
 
         val user = LocalStore.users[safeUid]
-        if (user?.role == Role.SUPER_ADMIN ||
-            user?.role == Role.ADMIN ||
-            user?.email == "europexpert38@gmail.com" ||
-            user?.email == "gazitasdemir46@gmail.com" ||
-            safeUid.startsWith("admin")
-        ) {
+        if (user?.role == Role.SUPER_ADMIN || user?.role == Role.ADMIN) {
             return Resource.Error("Admin kullanıcısının galeri profili yoktur")
         }
-
-        val localDealer = LocalStore.dealers[safeUid]
-        if (localDealer != null) return Resource.Success(localDealer)
 
         return try {
             val doc = firestore.collection("dealers").document(safeUid).get().await()
@@ -321,23 +258,33 @@ actual class AuthRepository actual constructor() {
                     return Resource.Success(dealer)
                 }
             }
+            val localDealer = LocalStore.dealers[safeUid]
+            if (localDealer != null) return Resource.Success(localDealer)
             Resource.Error("Galeri bilgisi bulunamadı")
         } catch (e: Exception) {
+            val localDealer = LocalStore.dealers[safeUid]
+            if (localDealer != null) return Resource.Success(localDealer)
             Resource.Error("Galeri profili yüklenemedi")
         }
     }
 
     actual fun logout() {
+        try {
+            FirebaseAuth.getInstance().signOut()
+        } catch (_: Exception) {}
         LocalStore.currentLoggedInUid = null
         SessionManager.clearSession()
     }
 
     actual suspend fun deleteAccount(): Resource<Unit> {
-        val uid = LocalStore.currentLoggedInUid ?: SessionManager.getSavedUid()
+        val uid = getCurrentUid()
         if (!uid.isNullOrBlank()) {
             LocalStore.users.remove(uid)
             LocalStore.dealers.remove(uid)
         }
+        try {
+            FirebaseAuth.getInstance().currentUser?.delete()?.await()
+        } catch (_: Exception) {}
         LocalStore.currentLoggedInUid = null
         SessionManager.clearSession()
         return Resource.Success(Unit)

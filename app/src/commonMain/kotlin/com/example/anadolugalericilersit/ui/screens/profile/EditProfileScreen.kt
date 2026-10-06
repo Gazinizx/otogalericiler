@@ -7,16 +7,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,9 +53,18 @@ fun EditProfileScreen(
     var description by remember { mutableStateOf(dealer?.description ?: "") }
     var workingHours by remember { mutableStateOf(dealer?.workingHours ?: "09:00 - 18:00") }
 
-    val logoPicker = rememberImagePickerLauncher { uriStr ->
-        if (uriStr != null && dealer != null) {
-            dealerViewModel.updateDealerLogo(dealerId = dealer.id, logoUri = uriStr)
+    var profilePhotoUrl by remember { mutableStateOf(dealer?.profilePhotoUrl ?: "") }
+    var shopPhotoUrl by remember { mutableStateOf(dealer?.shopPhotoUrl ?: dealer?.logoUrl ?: "") }
+
+    val profilePhotoPicker = rememberImagePickerLauncher { uriStr ->
+        if (uriStr != null) {
+            profilePhotoUrl = uriStr
+        }
+    }
+
+    val shopPhotoPicker = rememberImagePickerLauncher { uriStr ->
+        if (uriStr != null) {
+            shopPhotoUrl = uriStr
         }
     }
 
@@ -87,28 +100,60 @@ fun EditProfileScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo Change
-            Box(
+            // SHOP / STOREFRONT PHOTO COVER
+            Text("Dükkan / Galeri Fotoğrafı", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Card(
                 modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .clickable { logoPicker() },
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .clickable { shopPhotoPicker() },
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                if (dealer?.logoUrl.isNullOrBlank().not()) {
-                    AppAsyncImage(
-                        model = dealer?.logoUrl,
-                        contentDescription = "Logo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = null)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (shopPhotoUrl.isNotBlank()) {
+                        AppAsyncImage(
+                            model = shopPhotoUrl,
+                            contentDescription = "Dükkan Fotoğrafı",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Store, contentDescription = null, modifier = Modifier.size(36.dp))
+                            Text("Dükkan / Galeri Fotoğrafı Seç", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // PROFILE / AUTHORIZED PERSON PHOTO AVATAR
+            Text("Yetkili Profil Fotoğrafı", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { profilePhotoPicker() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (profilePhotoUrl.isNotBlank()) {
+                    AppAsyncImage(
+                        model = profilePhotoUrl,
+                        contentDescription = "Profil Fotoğrafı",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(36.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             OutlinedTextField(
                 value = galleryName,
@@ -194,7 +239,7 @@ fun EditProfileScreen(
             OutlinedTextField(
                 value = ibanOwnerName,
                 onValueChange = { ibanOwnerName = it },
-                label = { Text("IBAN Sahibinin Adı Soyadı (Kimlikteki Gibi)") },
+                label = { Text("IBAN Sahibinin Adı Soyadı") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -233,7 +278,10 @@ fun EditProfileScreen(
                             iban = iban,
                             ibanOwnerName = ibanOwnerName,
                             description = description,
-                            workingHours = workingHours
+                            workingHours = workingHours,
+                            profilePhotoUrl = profilePhotoUrl,
+                            shopPhotoUrl = shopPhotoUrl,
+                            logoUrl = shopPhotoUrl.ifBlank { profilePhotoUrl.ifBlank { dealer.logoUrl } }
                         )
                         dealerViewModel.updateDealerProfile(updated)
                     }

@@ -89,17 +89,22 @@ class VehicleViewModel(
 
         viewModelScope.launch {
             _saveState.value = Resource.Loading()
-            val result = vehicleRepository.saveVehicle(
-                context,
-                vehicle,
-                newImageUris,
-                videoUri,
-                expertReportUri
-            ) { percent, message ->
-                _uploadProgress.value = Pair(percent, message)
+            try {
+                val result = vehicleRepository.saveVehicle(
+                    context,
+                    vehicle,
+                    newImageUris,
+                    videoUri,
+                    expertReportUri
+                ) { percent, message ->
+                    _uploadProgress.value = Pair(percent, message)
+                }
+                _saveState.value = result
+            } catch (e: Throwable) {
+                _saveState.value = Resource.Error(e.message ?: "İlan kaydedilirken hata oluştu")
+            } finally {
+                _uploadProgress.value = null
             }
-            _saveState.value = result
-            _uploadProgress.value = null
         }
     }
 

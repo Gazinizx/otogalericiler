@@ -25,9 +25,11 @@ import com.example.anadolugalericilersit.data.local.DebtTransaction
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.local.TransactionType
 import com.example.anadolugalericilersit.data.model.Dealer
+import com.example.anadolugalericilersit.data.repository.DealerRepository
 import com.example.anadolugalericilersit.utils.NotificationUtils
 import com.example.anadolugalericilersit.utils.currentTimeMillis
 import com.example.anadolugalericilersit.utils.formatDate
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,6 +127,8 @@ fun AdminDealerDebtItem(
     var selectedType by remember { mutableStateOf(TransactionType.DEBT) }
     var amountInput by remember { mutableStateOf("") }
     var descriptionInput by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val dealerRepo = remember { DealerRepository() }
 
     val transactions = remember(dealer.id, LocalStore.debtTransactions[dealer.id]) {
         LocalStore.debtTransactions[dealer.id] ?: mutableListOf()
@@ -252,38 +256,29 @@ fun AdminDealerDebtItem(
                                 return@Button
                             }
 
-                            val now = currentTimeMillis()
-                            val tx = DebtTransaction(
-                                dealerId = dealer.id,
-                                amount = amount,
-                                description = descriptionInput,
-                                type = selectedType,
-                                timestamp = now
-                            )
+                            val isDebt = selectedType == TransactionType.DEBT
+                            val note = descriptionInput.ifBlank { if (isDebt) "Borç Eklendi" else "Ödeme Alındı" }
 
-                            val txList = LocalStore.debtTransactions.getOrPut(dealer.id) { mutableListOf() }
-                            txList.add(0, tx)
+                            scope.launch {
+                                dealerRepo.recordDebtOrPayment(
+                                    dealerId = dealer.id,
+                                    amount = amount,
+                                    isDebt = isDebt,
+                                    note = note
+                                )
 
-                            val newTotalDebt = if (selectedType == TransactionType.DEBT) {
-                                dealer.totalDebt + amount
-                            } else {
-                                (dealer.totalDebt - amount).coerceAtLeast(0.0)
+                                NotificationUtils.sendDebtOrPaymentNotification(
+                                    dealer = dealer.copy(totalDebt = if (isDebt) dealer.totalDebt + amount else (dealer.totalDebt - amount).coerceAtLeast(0.0)),
+                                    type = selectedType.name,
+                                    amount = amount
+                                )
+
+                                amountInput = ""
+                                descriptionInput = ""
+                                showForm = false
+                                ToastUtils.showToast(message = "İşlem kaydedildi ve galeriye bildirim gönderildi!")
+                                onTransactionRecorded()
                             }
-
-                            val updatedDealer = dealer.copy(totalDebt = newTotalDebt)
-                            LocalStore.dealers[dealer.id] = updatedDealer
-
-                            NotificationUtils.sendDebtOrPaymentNotification(
-                                dealer = updatedDealer,
-                                type = selectedType.name,
-                                amount = amount
-                            )
-
-                            amountInput = ""
-                            descriptionInput = ""
-                            showForm = false
-                            ToastUtils.showToast(message = "İşlem başarıyla kaydedildi!")
-                            onTransactionRecorded()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
