@@ -4,6 +4,7 @@ import com.example.anadolugalericilersit.data.local.DebtTransaction
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.DealerStatus
+import com.example.anadolugalericilersit.utils.FirestoreRestClient
 import com.example.anadolugalericilersit.utils.Resource
 
 actual class DealerRepository actual constructor() {
@@ -12,12 +13,14 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun getDealers(status: DealerStatus?): Resource<List<Dealer>> {
+        FirestoreRestClient.syncDealers()
         val all = LocalStore.dealers.values.toList()
         val filtered = if (status != null) all.filter { it.accountStatus == status } else all
         return Resource.Success(filtered)
     }
 
     actual suspend fun getDealerById(dealerId: String): Resource<Dealer> {
+        FirestoreRestClient.syncDealers()
         val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
         return Resource.Success(dealer)
     }

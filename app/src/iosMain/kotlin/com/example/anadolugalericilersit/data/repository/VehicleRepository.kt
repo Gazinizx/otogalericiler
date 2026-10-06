@@ -5,6 +5,7 @@ import com.example.anadolugalericilersit.data.model.Vehicle
 import com.example.anadolugalericilersit.data.model.VehicleFilter
 import com.example.anadolugalericilersit.data.model.VehicleSort
 import com.example.anadolugalericilersit.data.model.VehicleStatus
+import com.example.anadolugalericilersit.utils.FirestoreRestClient
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.generateUuid
 
@@ -14,23 +15,27 @@ actual class VehicleRepository actual constructor() {
         sort: VehicleSort,
         limit: Int
     ): Resource<List<Vehicle>> {
+        FirestoreRestClient.syncVehicles()
         var list = LocalStore.vehicles.values.toList()
         if (filter.brand != null) list = list.filter { it.brand.equals(filter.brand, true) }
         return Resource.Success(list.take(limit))
     }
 
     actual suspend fun getVehicleById(vehicleId: String): Resource<Vehicle> {
+        FirestoreRestClient.syncVehicles()
         val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
         return Resource.Success(v)
     }
 
     actual suspend fun getVehiclesByDealer(dealerId: String, statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
+        FirestoreRestClient.syncVehicles()
         var list = LocalStore.vehicles.values.filter { it.dealerId == dealerId }
         if (statusFilter != null) list = list.filter { it.status == statusFilter }
         return Resource.Success(list)
     }
 
     actual suspend fun getVehiclesByStatusForAdmin(statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
+        FirestoreRestClient.syncVehicles()
         var list = LocalStore.vehicles.values.toList()
         if (statusFilter != null) list = list.filter { it.status == statusFilter }
         return Resource.Success(list)
