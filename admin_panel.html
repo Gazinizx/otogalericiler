@@ -92,6 +92,12 @@
                         </div>
                         <span id="badgeDamga" class="hidden bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
                     </button>
+                    <button onclick="showTab('debts')" id="nav-debts" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fa-solid fa-credit-card text-rose-400 w-5"></i> Borç & Veresiye
+                        </div>
+                        <span id="badgeDebts" class="hidden bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
                     <button onclick="showTab('vehicles')" id="nav-vehicles" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition text-left">
                         <div class="flex items-center gap-3.5">
                             <i class="fa-solid fa-car w-5"></i> İlanlar
@@ -288,6 +294,78 @@
                 </div>
             </div>
 
+            <!-- TAB: DEBTS (BORÇ & VERESİYE) -->
+            <div id="tab-debts" class="hidden space-y-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-white"><i class="fa-solid fa-credit-card text-rose-400 mr-2"></i> Galeri Borç & Veresiye Yönetimi</h1>
+                    <p class="text-slate-400 text-sm">Galerilere borç/veresiye ekleyin, ödeme hareketlerini ve bakiye geçmişini yönetin</p>
+                </div>
+
+                <!-- ADD DEBT / PAYMENT FORM CARD -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                    <h3 class="text-lg font-bold text-white">Yeni Borç Veya Ödeme Kaydı Ekle</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Galeri Seçin</label>
+                            <select id="debtDealerSelect" class="w-full bg-slate-900 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                                <option value="">Galeri Seçiniz...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">İşlem Türü</label>
+                            <select id="debtTypeSelect" class="w-full bg-slate-900 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                                <option value="DEBT">➕ Borç Ekle (Veresiye)</option>
+                                <option value="PAYMENT">➖ Ödeme Al (Borç Düş)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Tutar (₺)</label>
+                            <input type="number" id="debtAmountInput" placeholder="Örn: 2500" class="w-full bg-slate-900 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Açıklama / Not</label>
+                            <input type="text" id="debtNoteInput" placeholder="Örn: Damga/İlan bedeli" class="w-full bg-slate-900 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <button onclick="submitDebtTransaction()" class="w-full md:w-auto px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> İşlemi Kaydet ve Galeriye Bildir
+                    </button>
+                </div>
+
+                <!-- GALERİ BORÇ DURUMLARI TABLOSU -->
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div class="p-4 bg-slate-900/60 border-b border-slate-700 flex items-center justify-between">
+                        <h3 class="font-bold text-white">Galerilerin Bakiye ve Borç Listesi</h3>
+                        <span id="statTotalDebtAmount" class="text-xs font-bold text-rose-400 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">Toplam Borç: 0 ₺</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/40 border-b border-slate-700 text-xs uppercase font-semibold text-slate-400">
+                                    <th class="p-4">Galeri Adı</th>
+                                    <th class="p-4">Yetkili / Telefon</th>
+                                    <th class="p-4">Güncel Borç Tutarı</th>
+                                    <th class="p-4 text-right">Hızlı İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="debtsTableBody" class="divide-y divide-slate-700/60 text-sm">
+                                <tr>
+                                    <td colspan="4" class="p-8 text-center text-slate-500">Borç verileri yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SON BORÇ / ÖDEME HAREKETLERİ LOGU -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+                    <h3 class="font-bold text-white text-lg"><i class="fa-solid fa-history text-slate-400 mr-2"></i> Son Borç & Ödeme Hareketleri</h3>
+                    <div id="debtHistoryList" class="space-y-3">
+                        <p class="text-slate-500 text-sm">Hareket geçmişi yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAB: VEHICLES -->
             <div id="tab-vehicles" class="hidden space-y-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -441,7 +519,7 @@
 
         // TAB SWITCHING
         function showTab(tabName) {
-            ['dashboard', 'dealers', 'damga', 'vehicles', 'reports', 'config'].forEach(t => {
+            ['dashboard', 'dealers', 'damga', 'debts', 'vehicles', 'reports', 'config'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 if (el) el.classList.add('hidden');
                 const navBtn = document.getElementById(`nav-${t}`);
@@ -454,6 +532,7 @@
 
             if (tabName === 'dealers') loadDealers();
             if (tabName === 'damga') loadDamgaTab();
+            if (tabName === 'debts') loadDebtsTab();
             if (tabName === 'vehicles') loadVehicles();
             if (tabName === 'reports') loadReports();
             if (tabName === 'config') loadAppConfig();
@@ -857,6 +936,125 @@
             await db.collection('reports').doc(reportId).update({ isResolved: true });
             loadDashboardData();
             loadReports();
+        }
+
+        // LOAD DEBTS TAB
+        async function loadDebtsTab() {
+            const dealersSnap = await db.collection('dealers').get();
+            const selectEl = document.getElementById('debtDealerSelect');
+            const tbody = document.getElementById('debtsTableBody');
+
+            let selectHtml = '<option value="">Galeri Seçiniz...</option>';
+            let tableHtml = '';
+            let totalDebtAll = 0;
+
+            dealersSnap.forEach(doc => {
+                const d = doc.data();
+                const debt = d.totalDebt || 0;
+                totalDebtAll += debt;
+
+                selectHtml += `<option value="${doc.id}">${d.galleryName || 'Galeri'} (Güncel: ${debt.toLocaleString('tr-TR')} ₺)</option>`;
+
+                let debtBadge = '<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Borcu Yok</span>';
+                if (debt > 0) {
+                    debtBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-xs font-bold">🔴 ${debt.toLocaleString('tr-TR')} ₺ Borçlu</span>`;
+                }
+
+                tableHtml += `
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="p-4 font-semibold text-white">${d.galleryName || '—'}</td>
+                        <td class="p-4">
+                            <p class="text-white">${d.authorizedName || '—'}</p>
+                            <p class="text-xs text-slate-400">${d.phone || ''}</p>
+                        </td>
+                        <td class="p-4">${debtBadge}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="quickSelectDealerForDebt('${doc.id}', 'DEBT')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition">+ Borç Ekle</button>
+                            <button onclick="quickSelectDealerForDebt('${doc.id}', 'PAYMENT')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">- Ödeme Al</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            selectEl.innerHTML = selectHtml;
+            tbody.innerHTML = tableHtml || '<tr><td colspan="4" class="p-8 text-center text-slate-500">Kayıtlı galeri bulunamadı.</td></tr>';
+            document.getElementById('statTotalDebtAmount').innerText = `Toplam Sektör Borcu: ${totalDebtAll.toLocaleString('tr-TR')} ₺`;
+
+            // Debt History Transactions
+            const txSnap = await db.collection('debt_transactions').limit(20).get();
+            let historyHtml = '';
+
+            txSnap.forEach(doc => {
+                const tx = doc.data();
+                const isDebt = tx.type === 'DEBT';
+                const dateStr = tx.timestamp ? new Date(tx.timestamp).toLocaleString('tr-TR') : '';
+
+                historyHtml += `
+                    <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg ${isDebt ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'} flex items-center justify-center text-sm font-bold">
+                                ${isDebt ? '➕' : '➖'}
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white text-sm">${tx.description || (isDebt ? 'Borç Kaydı' : 'Ödeme Kaydı')}</h4>
+                                <p class="text-xs text-slate-400">${dateStr}</p>
+                            </div>
+                        </div>
+                        <span class="font-bold text-sm ${isDebt ? 'text-rose-400' : 'text-emerald-400'}">
+                            ${isDebt ? '+' : '-'}${tx.amount ? tx.amount.toLocaleString('tr-TR') : 0} ₺
+                        </span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('debtHistoryList').innerHTML = historyHtml || '<p class="text-slate-500 text-sm">Henüz borç veya ödeme hareketi bulunmuyor.</p>';
+        }
+
+        function quickSelectDealerForDebt(dealerId, type) {
+            document.getElementById('debtDealerSelect').value = dealerId;
+            document.getElementById('debtTypeSelect').value = type;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function submitDebtTransaction() {
+            const dealerId = document.getElementById('debtDealerSelect').value;
+            const type = document.getElementById('debtTypeSelect').value;
+            const amount = parseFloat(document.getElementById('debtAmountInput').value);
+            const note = document.getElementById('debtNoteInput').value.trim();
+
+            if (!dealerId) { alert('Lütfen galeri seçiniz.'); return; }
+            if (isNaN(amount) || amount <= 0) { alert('Lütfen geçerli bir tutar giriniz.'); return; }
+
+            const isDebt = type === 'DEBT';
+            const dDoc = await db.collection('dealers').doc(dealerId).get();
+            if (!dDoc.exists) return;
+
+            const dealerData = dDoc.data();
+            const currentDebt = dealerData.totalDebt || 0;
+            const newDebt = isDebt ? (currentDebt + amount) : Math.max(0, currentDebt - amount);
+
+            // 1. Update Dealer Total Debt
+            await db.collection('dealers').doc(dealerId).update({ totalDebt: newDebt });
+
+            // 2. Add Debt Transaction Record
+            const txId = 'TX_' + Date.now();
+            await db.collection('debt_transactions').doc(txId).set({
+                id: txId,
+                dealerId: dealerId,
+                dealerName: dealerData.galleryName || '',
+                amount: amount,
+                description: note || (isDebt ? 'Borç Eklendi (Veresiye)' : 'Ödeme Alındı'),
+                type: type,
+                timestamp: Date.now()
+            });
+
+            alert(`İşlem başarıyla kaydedildi!\nGaleri: ${dealerData.galleryName}\nYeni Güncel Borç Tutarı: ${newDebt.toLocaleString('tr-TR')} ₺`);
+
+            document.getElementById('debtAmountInput').value = '';
+            document.getElementById('debtNoteInput').value = '';
+
+            loadDashboardData();
+            loadDebtsTab();
         }
 
         // APP CONFIG
