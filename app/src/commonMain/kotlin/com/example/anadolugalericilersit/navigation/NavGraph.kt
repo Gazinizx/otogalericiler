@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -42,13 +42,13 @@ import com.example.anadolugalericilersit.ui.viewmodel.*
 @Composable
 fun AnadoluNavGraph(
     navController: NavHostController,
-    authViewModel: AuthViewModel = viewModel(),
-    homeViewModel: HomeViewModel = viewModel(),
-    vehicleViewModel: VehicleViewModel = viewModel(),
-    dealerViewModel: DealerViewModel = viewModel(),
-    favoriteViewModel: FavoriteViewModel = viewModel(),
-    notificationViewModel: NotificationViewModel = viewModel(),
-    adminViewModel: AdminViewModel = viewModel()
+    authViewModel: AuthViewModel = remember { AuthViewModel() },
+    homeViewModel: HomeViewModel = remember { HomeViewModel() },
+    vehicleViewModel: VehicleViewModel = remember { VehicleViewModel() },
+    dealerViewModel: DealerViewModel = remember { DealerViewModel() },
+    favoriteViewModel: FavoriteViewModel = remember { FavoriteViewModel() },
+    notificationViewModel: NotificationViewModel = remember { NotificationViewModel() },
+    adminViewModel: AdminViewModel = remember { AdminViewModel() }
 ) {
     val authState by authViewModel.authState.collectAsState()
     val dealerState by authViewModel.dealerState.collectAsState()
