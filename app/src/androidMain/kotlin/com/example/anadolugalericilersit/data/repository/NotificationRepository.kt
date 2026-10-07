@@ -69,4 +69,13 @@ actual class NotificationRepository actual constructor() {
             Resource.Error(e.localizedMessage ?: "Bildirim gönderilemedi")
         }
     }
+
+    actual suspend fun deleteNotification(notificationId: String): Resource<Unit> {
+        return try {
+            firestore.collection("notifications").document(notificationId).delete().await()
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.localizedMessage ?: "Duyuru silinemedi")
+        }
+    }
 }

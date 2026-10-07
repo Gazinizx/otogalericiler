@@ -7,4 +7,5 @@ expect class NotificationRepository() {
     suspend fun getNotifications(userId: String): Resource<List<NotificationItem>>
     suspend fun markAsRead(notificationId: String): Resource<Unit>
     suspend fun sendNotification(notification: NotificationItem): Resource<Unit>
+    suspend fun deleteNotification(notificationId: String): Resource<Unit>
 }

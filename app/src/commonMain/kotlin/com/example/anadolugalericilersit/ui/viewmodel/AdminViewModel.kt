@@ -187,6 +187,19 @@ class AdminViewModel(
         }
     }
 
+    fun deleteAnnouncement(notificationId: String, onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _actionState.value = Resource.Loading()
+            val result = notificationRepository.deleteNotification(notificationId)
+            _actionState.value = result
+            if (result is Resource.Success) {
+                onComplete(true, null)
+            } else {
+                onComplete(false, result.message ?: "Duyuru silinemedi")
+            }
+        }
+    }
+
     fun clearActionState() {
         _actionState.value = Resource.Empty()
     }

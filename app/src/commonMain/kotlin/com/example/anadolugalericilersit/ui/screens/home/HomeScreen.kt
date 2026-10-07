@@ -171,34 +171,32 @@ fun HomeScreen(
                         if (dynamicAnnouncements.isNotEmpty()) {
                             items(dynamicAnnouncements) { announcement ->
                                 Card(
-                                    modifier = Modifier.width(310.dp),
+                                    modifier = Modifier
+                                        .width(340.dp)
+                                        .height(170.dp),
                                     shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                                 ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
-                                        Text(
-                                            text = announcement.title,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.primary
+                                    if (announcement.imageUrl.isNotBlank()) {
+                                        AppAsyncImage(
+                                            model = announcement.imageUrl,
+                                            contentDescription = "Duyuru Görseli",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = announcement.message,
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-
-                                        if (announcement.imageUrl.isNotBlank()) {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            AppAsyncImage(
-                                                model = announcement.imageUrl,
-                                                contentDescription = "Duyuru Görseli",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(130.dp)
-                                                    .clip(RoundedCornerShape(8.dp))
+                                    } else {
+                                        Column(modifier = Modifier.padding(14.dp)) {
+                                            Text(
+                                                text = announcement.title,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = announcement.message,
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
                                     }

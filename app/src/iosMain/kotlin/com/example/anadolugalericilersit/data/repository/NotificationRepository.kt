@@ -2,6 +2,7 @@ package com.example.anadolugalericilersit.data.repository
 
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.NotificationItem
+import com.example.anadolugalericilersit.utils.FirestoreSync
 import com.example.anadolugalericilersit.utils.Resource
 
 actual class NotificationRepository {
@@ -25,6 +26,14 @@ actual class NotificationRepository {
     actual suspend fun sendNotification(notification: NotificationItem): Resource<Unit> {
         val list = LocalStore.notifications.getOrPut(notification.userId) { mutableListOf() }
         list.add(0, notification)
+        return Resource.Success(Unit)
+    }
+
+    actual suspend fun deleteNotification(notificationId: String): Resource<Unit> {
+        LocalStore.notifications.values.forEach { list ->
+            list.removeAll { it.id == notificationId }
+        }
+        FirestoreSync.deleteDocument("notifications", notificationId)
         return Resource.Success(Unit)
     }
 }

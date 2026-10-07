@@ -3,14 +3,16 @@ package com.example.anadolugalericilersit.ui.screens.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Report
@@ -26,6 +28,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.anadolugalericilersit.data.model.NotificationItem
+import com.example.anadolugalericilersit.data.repository.NotificationRepository
 import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.viewmodel.AdminViewModel
 import com.example.anadolugalericilersit.utils.Resource
@@ -45,10 +49,14 @@ fun AdminDashboardScreen(
     val statsState by adminViewModel.statsState.collectAsState()
 
     var showAnnouncementDialog by remember { mutableStateOf(false) }
+    var showManageAnnouncementsDialog by remember { mutableStateOf(false) }
     var announcementTitle by remember { mutableStateOf("") }
     var announcementMessage by remember { mutableStateOf("") }
     var announcementImageUrl by remember { mutableStateOf("") }
     var isSendingAnnouncement by remember { mutableStateOf(false) }
+
+    var activeAnnouncements by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
+    val notificationRepository = remember { NotificationRepository() }
 
     val announcementImagePicker = rememberImagePickerLauncher { uriStr ->
         if (uriStr != null) {
@@ -58,6 +66,15 @@ fun AdminDashboardScreen(
 
     LaunchedEffect(Unit) {
         adminViewModel.loadStats()
+    }
+
+    LaunchedEffect(showManageAnnouncementsDialog) {
+        if (showManageAnnouncementsDialog) {
+            val res = notificationRepository.getNotifications("all")
+            if (res is Resource.Success) {
+                activeAnnouncements = res.data ?: emptyList()
+            }
+        }
     }
 
     Scaffold(
@@ -126,6 +143,13 @@ fun AdminDashboardScreen(
                 title = "Duyuru ve Kampanya Gönder",
                 subtitle = "Tüm kullanıcılara ve galerilere görselli duyuru yayınla",
                 onClick = { showAnnouncementDialog = true }
+            )
+
+            AdminNavigationCard(
+                icon = Icons.Default.Delete,
+                title = "Aktif Duyuruları Sil / Yönet",
+                subtitle = "Yayınlanan duyuru ve kampanyaları görüntüle veya sil",
+                onClick = { showManageAnnouncementsDialog = true }
             )
 
             AdminNavigationCard(
@@ -249,6 +273,61 @@ fun AdminDashboardScreen(
             dismissButton = {
                 TextButton(onClick = { showAnnouncementDialog = false }) {
                     Text("İptal")
+                }
+            }
+        )
+    }
+
+    if (showManageAnnouncementsDialog) {
+        AlertDialog(
+            onDismissRequest = { showManageAnnouncementsDialog = false },
+            title = { Text("Aktif Duyuruları Yönet / Sil") },
+            text = {
+                if (activeAnnouncements.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                        Text("Yayında aktif duyuru bulunmuyor.", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().height(300.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(activeAnnouncements) { item ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = item.title.ifBlank { "Görsel Duyuru" }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        if (item.message.isNotBlank()) {
+                                            Text(text = item.message, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            adminViewModel.deleteAnnouncement(item.id) { success, _ ->
+                                                if (success) {
+                                                    activeAnnouncements = activeAnnouncements.filter { it.id != item.id }
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Sil", tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showManageAnnouncementsDialog = false }) {
+                    Text("Kapat")
                 }
             }
         )
