@@ -13,14 +13,14 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun getDealers(status: DealerStatus?): Resource<List<Dealer>> {
-        FirestoreRestClient.syncDealers()
+        FirestoreRestClient.syncDealersSuspend()
         val all = LocalStore.dealers.values.toList()
         val filtered = if (status != null) all.filter { it.accountStatus == status } else all
         return Resource.Success(filtered)
     }
 
     actual suspend fun getDealerById(dealerId: String): Resource<Dealer> {
-        FirestoreRestClient.syncDealers()
+        FirestoreRestClient.syncDealersSuspend()
         val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
         return Resource.Success(dealer)
     }

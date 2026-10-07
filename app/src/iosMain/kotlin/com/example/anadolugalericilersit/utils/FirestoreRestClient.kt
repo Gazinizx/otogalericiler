@@ -3,21 +3,22 @@ package com.example.anadolugalericilersit.utils
 import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.*
 import kotlinx.cinterop.BetaInteropApi
+import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.*
-import platform.darwin.dispatch_semaphore_create
-import platform.darwin.dispatch_semaphore_signal
-import platform.darwin.dispatch_semaphore_wait
-import platform.darwin.dispatch_time
+import kotlin.coroutines.resume
 
 @OptIn(BetaInteropApi::class)
 object FirestoreRestClient {
     private const val PROJECT_ID = "galeri-6fa72"
     private const val BASE_URL = "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents"
 
-    fun syncDealers() {
+    suspend fun syncDealersSuspend() = suspendCancellableCoroutine { continuation ->
         try {
-            val url = NSURL.URLWithString("$BASE_URL/dealers") ?: return
-            val sem = dispatch_semaphore_create(0L)
+            val url = NSURL.URLWithString("$BASE_URL/dealers")
+            if (url == null) {
+                continuation.resume(Unit)
+                return@suspendCancellableCoroutine
+            }
             val task = NSURLSession.sharedSession.dataTaskWithURL(url) { data, _, _ ->
                 if (data != null) {
                     val jsonStr = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
@@ -25,17 +26,21 @@ object FirestoreRestClient {
                         parseAndStoreDealers(jsonStr)
                     }
                 }
-                dispatch_semaphore_signal(sem)
+                continuation.resume(Unit)
             }
             task.resume()
-            dispatch_semaphore_wait(sem, dispatch_time(0.toULong(), 3_000_000_000L))
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            continuation.resume(Unit)
+        }
     }
 
-    fun syncVehicles() {
+    suspend fun syncVehiclesSuspend() = suspendCancellableCoroutine { continuation ->
         try {
-            val url = NSURL.URLWithString("$BASE_URL/vehicles") ?: return
-            val sem = dispatch_semaphore_create(0L)
+            val url = NSURL.URLWithString("$BASE_URL/vehicles")
+            if (url == null) {
+                continuation.resume(Unit)
+                return@suspendCancellableCoroutine
+            }
             val task = NSURLSession.sharedSession.dataTaskWithURL(url) { data, _, _ ->
                 if (data != null) {
                     val jsonStr = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
@@ -43,11 +48,12 @@ object FirestoreRestClient {
                         parseAndStoreVehicles(jsonStr)
                     }
                 }
-                dispatch_semaphore_signal(sem)
+                continuation.resume(Unit)
             }
             task.resume()
-            dispatch_semaphore_wait(sem, dispatch_time(0.toULong(), 3_000_000_000L))
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            continuation.resume(Unit)
+        }
     }
 
     private fun parseAndStoreDealers(json: String) {
