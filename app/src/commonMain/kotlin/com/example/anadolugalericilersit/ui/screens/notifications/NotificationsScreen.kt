@@ -12,11 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.anadolugalericilersit.data.model.NotificationItem
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.viewmodel.NotificationViewModel
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.formatDate
@@ -115,6 +118,19 @@ fun NotificationsScreen(
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+
+                                    if (item.imageUrl.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        AppAsyncImage(
+                                            model = item.imageUrl,
+                                            contentDescription = "Duyuru Görseli",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                    }
                                 }
                             }
                         }

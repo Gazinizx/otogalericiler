@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -37,6 +38,12 @@ fun AdminDashboardScreen(
     onNavigateToDebts: () -> Unit = {}
 ) {
     val statsState by adminViewModel.statsState.collectAsState()
+
+    var showAnnouncementDialog by remember { mutableStateOf(false) }
+    var announcementTitle by remember { mutableStateOf("") }
+    var announcementMessage by remember { mutableStateOf("") }
+    var announcementImageUrl by remember { mutableStateOf("") }
+    var isSendingAnnouncement by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         adminViewModel.loadStats()
@@ -104,6 +111,13 @@ fun AdminDashboardScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             AdminNavigationCard(
+                icon = Icons.Default.Notifications,
+                title = "Duyuru ve Kampanya Gönder",
+                subtitle = "Tüm kullanıcılara ve galerilere görselli duyuru yayınla",
+                onClick = { showAnnouncementDialog = true }
+            )
+
+            AdminNavigationCard(
                 icon = Icons.Default.Store,
                 title = "Galerici Başvuruları ve Yönetimi",
                 subtitle = "Galerici onaylama, reddetme ve askıya alma işlemleri",
@@ -131,7 +145,6 @@ fun AdminDashboardScreen(
                 onClick = onNavigateToDamga
             )
 
-
             AdminNavigationCard(
                 icon = Icons.Default.Store,
                 title = "Galerici Borç & Cari Takip",
@@ -139,6 +152,76 @@ fun AdminDashboardScreen(
                 onClick = onNavigateToDebts
             )
         }
+    }
+
+    if (showAnnouncementDialog) {
+        AlertDialog(
+            onDismissRequest = { showAnnouncementDialog = false },
+            title = { Text("Duyuru / Kampanya Yayınla") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = announcementTitle,
+                        onValueChange = { announcementTitle = it },
+                        label = { Text("Duyuru Başlığı") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = announcementMessage,
+                        onValueChange = { announcementMessage = it },
+                        label = { Text("Duyuru İçeriği / Mesaj") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 4
+                    )
+                    OutlinedTextField(
+                        value = announcementImageUrl,
+                        onValueChange = { announcementImageUrl = it },
+                        label = { Text("Görsel URL'si (İsteğe bağlı)") },
+                        placeholder = { Text("https://... (Örn: 1080x540)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "İpucu: Görsel ölçüsü en ideal 1080x540 piksel olmalıdır.",
+                        fontSize = 11.sp,
+                        color = Color.Gray
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (announcementTitle.isNotBlank() && announcementMessage.isNotBlank()) {
+                            isSendingAnnouncement = true
+                            adminViewModel.sendAnnouncement(
+                                title = announcementTitle,
+                                message = announcementMessage,
+                                imageUrl = announcementImageUrl
+                            ) { success, _ ->
+                                isSendingAnnouncement = false
+                                if (success) {
+                                    announcementTitle = ""
+                                    announcementMessage = ""
+                                    announcementImageUrl = ""
+                                    showAnnouncementDialog = false
+                                }
+                            }
+                        }
+                    },
+                    enabled = !isSendingAnnouncement
+                ) {
+                    if (isSendingAnnouncement) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                    } else {
+                        Text("Yayınla")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAnnouncementDialog = false }) {
+                    Text("İptal")
+                }
+            }
+        )
     }
 }
 

@@ -7,6 +7,7 @@ data class NotificationItem(
     val userId: String = "",
     val title: String = "",
     val message: String = "",
+    val imageUrl: String = "",
     val type: String = "INFO",
     val targetId: String? = null,
     val isRead: Boolean = false,

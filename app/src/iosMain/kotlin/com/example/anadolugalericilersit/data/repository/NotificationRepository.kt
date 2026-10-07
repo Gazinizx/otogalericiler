@@ -6,8 +6,10 @@ import com.example.anadolugalericilersit.utils.Resource
 
 actual class NotificationRepository {
     actual suspend fun getNotifications(userId: String): Resource<List<NotificationItem>> {
-        val list = LocalStore.notifications[userId]?.toList() ?: emptyList()
-        return Resource.Success(list)
+        val userList = LocalStore.notifications[userId] ?: emptyList()
+        val broadcastList = LocalStore.notifications["all"] ?: emptyList()
+        val combined = (userList + broadcastList).distinctBy { it.id }.sortedByDescending { it.createdAt }
+        return Resource.Success(combined)
     }
 
     actual suspend fun markAsRead(notificationId: String): Resource<Unit> {

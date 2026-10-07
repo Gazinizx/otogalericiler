@@ -167,6 +167,26 @@ class AdminViewModel(
         }
     }
 
+    fun sendAnnouncement(title: String, message: String, imageUrl: String, onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _actionState.value = Resource.Loading()
+            val notif = NotificationItem(
+                userId = "all",
+                title = title,
+                message = message,
+                imageUrl = imageUrl,
+                type = "ANNOUNCEMENT"
+            )
+            val result = notificationRepository.sendNotification(notif)
+            _actionState.value = result
+            if (result is Resource.Success) {
+                onComplete(true, null)
+            } else {
+                onComplete(false, result.message ?: "Duyuru gönderilemedi")
+            }
+        }
+    }
+
     fun clearActionState() {
         _actionState.value = Resource.Empty()
     }

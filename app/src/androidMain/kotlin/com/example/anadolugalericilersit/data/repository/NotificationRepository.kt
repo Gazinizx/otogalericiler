@@ -12,10 +12,15 @@ actual class NotificationRepository actual constructor() {
 
     actual suspend fun getNotifications(userId: String): Resource<List<NotificationItem>> {
         return try {
-            val snapshot = firestore.collection("notifications")
+            val snapshot1 = firestore.collection("notifications")
                 .whereEqualTo("userId", userId)
                 .get().await()
-            val list = snapshot.toObjects(NotificationItem::class.java).sortedByDescending { it.createdAt }
+            val snapshot2 = firestore.collection("notifications")
+                .whereEqualTo("userId", "all")
+                .get().await()
+            val list = (snapshot1.toObjects(NotificationItem::class.java) + snapshot2.toObjects(NotificationItem::class.java))
+                .distinctBy { it.id }
+                .sortedByDescending { it.createdAt }
             Resource.Success(list)
         } catch (e: Exception) {
             Resource.Error(e.localizedMessage ?: "Bildirimler yüklenemedi")
