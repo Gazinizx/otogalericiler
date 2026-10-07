@@ -4,11 +4,14 @@ import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.AdminStats
 import com.example.anadolugalericilersit.data.model.DealerStatus
 import com.example.anadolugalericilersit.data.model.VehicleStatus
+import com.example.anadolugalericilersit.utils.FirestoreRestClient
 import com.example.anadolugalericilersit.utils.Resource
 
 actual class AdminRepository {
     actual suspend fun getAdminStats(): Resource<AdminStats> {
         return try {
+            FirestoreRestClient.syncDealersSuspend()
+            FirestoreRestClient.syncVehiclesSuspend()
             val dealers = LocalStore.dealers.values.toList()
             val totalDealers = dealers.size
             val pendingDealers = dealers.count { it.accountStatus == DealerStatus.PENDING }
