@@ -1,5 +1,6 @@
 package com.example.anadolugalericilersit.ui.screens.admin
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,13 +19,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.viewmodel.AdminViewModel
 import com.example.anadolugalericilersit.utils.Resource
+import com.example.anadolugalericilersit.utils.rememberImagePickerLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +49,12 @@ fun AdminDashboardScreen(
     var announcementMessage by remember { mutableStateOf("") }
     var announcementImageUrl by remember { mutableStateOf("") }
     var isSendingAnnouncement by remember { mutableStateOf(false) }
+
+    val announcementImagePicker = rememberImagePickerLauncher { uriStr ->
+        if (uriStr != null) {
+            announcementImageUrl = uriStr
+        }
+    }
 
     LaunchedEffect(Unit) {
         adminViewModel.loadStats()
@@ -173,13 +184,32 @@ fun AdminDashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 4
                     )
-                    OutlinedTextField(
-                        value = announcementImageUrl,
-                        onValueChange = { announcementImageUrl = it },
-                        label = { Text("Görsel URL'si (İsteğe bağlı)") },
-                        placeholder = { Text("https://... (Örn: 1080x540)") },
+
+                    Button(
+                        onClick = { announcementImagePicker() },
                         modifier = Modifier.fillMaxWidth()
-                    )
+                    ) {
+                        Text(if (announcementImageUrl.isBlank()) "Galeriden Görsel Seç (1080x540)" else "Görseli Değiştir")
+                    }
+
+                    if (announcementImageUrl.isNotBlank()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AppAsyncImage(
+                                model = announcementImageUrl,
+                                contentDescription = "Seçilen Görsel",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
                     Text(
                         text = "İpucu: Görsel ölçüsü en ideal 1080x540 piksel olmalıdır.",
                         fontSize = 11.sp,
