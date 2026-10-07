@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
@@ -28,10 +29,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.anadolugalericilersit.data.local.LocalStore
+import com.example.anadolugalericilersit.data.local.RewardRequest
 import com.example.anadolugalericilersit.data.model.NotificationItem
 import com.example.anadolugalericilersit.data.repository.NotificationRepository
 import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.viewmodel.AdminViewModel
+import com.example.anadolugalericilersit.utils.IntentUtils
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.rememberImagePickerLauncher
 
@@ -137,6 +141,16 @@ fun AdminDashboardScreen(
 
             Text(text = "Yönetim Menüsü", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
+
+            AdminNavigationCard(
+                icon = Icons.AutoMirrored.Filled.Send,
+                title = "Aylık Raporu ve İBAN'ları WhatsApp'tan Gönder",
+                subtitle = "Borçlu galerileri ve damga ödülü kazananların İBAN'larını WhatsApp ile ilet",
+                onClick = {
+                    val report = generateWhatsAppReport()
+                    IntentUtils.openWhatsApp(phone = "05054543099", message = report)
+                }
+            )
 
             AdminNavigationCard(
                 icon = Icons.Default.Notifications,
@@ -334,6 +348,48 @@ fun AdminDashboardScreen(
     }
 }
 
+private fun generateWhatsAppReport(): String {
+    val dealers = LocalStore.dealers.values.toList()
+    val rewardReqs = LocalStore.rewardRequests.values.toList()
+
+    val sb = StringBuilder()
+    sb.append("📊 *ANADOLU GALERICILER SITESI - AYLIK RAPOR*\n\n")
+    
+    sb.append("💰 *1. GALERICI BORÇ DURUMLARI*\n")
+    val debtors = dealers.filter { it.totalDebt > 0.0 }
+    if (debtors.isEmpty()) {
+        sb.append("• Borçlu galerici bulunmuyor.\n")
+    } else {
+        debtors.forEach { d ->
+            sb.append("• ${d.galleryName}: ${d.totalDebt} TL (Tel: ${d.phone})\n")
+        }
+    }
+
+    sb.append("\n🏆 *2. DAMGA ÖDÜLÜ TAMAMLAYANLAR VE İBANLAR*\n")
+    val completedRewards = if (rewardReqs.isNotEmpty()) {
+        rewardReqs
+    } else {
+        dealers.filter { it.damgaCount >= 6 || it.rewardCycleCount > 0 }.map { d ->
+            RewardRequest(
+                dealerId = d.id,
+                galleryName = d.galleryName,
+                iban = d.iban,
+                ibanOwnerName = d.ibanOwnerName
+            )
+        }
+    }
+
+    if (completedRewards.isEmpty()) {
+        sb.append("• Ödül bekleyen galeri bulunmuyor.\n")
+    } else {
+        completedRewards.forEach { r ->
+            sb.append("• ${r.galleryName}\n  IBAN: ${r.iban}\n  Alıcı: ${r.ibanOwnerName}\n\n")
+        }
+    }
+
+    return sb.toString()
+}
+
 @Composable
 fun AdminStatBox(
     title: String,
@@ -362,7 +418,8 @@ fun AdminNavigationCard(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tint: Color = MaterialTheme.colorScheme.primary
 ) {
     Card(
         modifier = Modifier
@@ -376,7 +433,7 @@ fun AdminNavigationCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+            Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
