@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.anadolugalericilersit.data.model.AppVersionConfig
 import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.DealerStatus
+import com.example.anadolugalericilersit.data.model.NotificationItem
 import com.example.anadolugalericilersit.data.model.Vehicle
 import com.example.anadolugalericilersit.data.model.VehicleFilter
 import com.example.anadolugalericilersit.data.model.VehicleSort
 import com.example.anadolugalericilersit.data.repository.DealerRepository
+import com.example.anadolugalericilersit.data.repository.NotificationRepository
 import com.example.anadolugalericilersit.data.repository.VehicleRepository
 import com.example.anadolugalericilersit.utils.AppVersionUtils
 import com.example.anadolugalericilersit.utils.Resource
@@ -29,6 +31,8 @@ class HomeViewModel(
     private val dealerRepository: DealerRepository = DealerRepository()
 ) : ViewModel() {
 
+    private val notificationRepository = NotificationRepository()
+
     private val _vehiclesState = MutableStateFlow<Resource<List<Vehicle>>>(Resource.Loading())
     val vehiclesState: StateFlow<Resource<List<Vehicle>>> = _vehiclesState.asStateFlow()
 
@@ -40,6 +44,9 @@ class HomeViewModel(
 
     private val _newArrivalsState = MutableStateFlow<Resource<List<Vehicle>>>(Resource.Loading())
     val newArrivalsState: StateFlow<Resource<List<Vehicle>>> = _newArrivalsState.asStateFlow()
+
+    private val _announcementsState = MutableStateFlow<Resource<List<NotificationItem>>>(Resource.Loading())
+    val announcementsState: StateFlow<Resource<List<NotificationItem>>> = _announcementsState.asStateFlow()
 
     private val _selectedBrand = MutableStateFlow<String?>(null)
     val selectedBrand: StateFlow<String?> = _selectedBrand.asStateFlow()
@@ -57,6 +64,13 @@ class HomeViewModel(
             _dealersState.value = Resource.Loading()
             _recommendedState.value = Resource.Loading()
             _newArrivalsState.value = Resource.Loading()
+
+            try {
+                val notifRes = notificationRepository.getNotifications("all")
+                if (notifRes is Resource.Success) {
+                    _announcementsState.value = notifRes
+                }
+            } catch (_: Exception) {}
 
             val filter = VehicleFilter(brand = _selectedBrand.value)
             val vehiclesResult = vehicleRepository.getVehicles(filter = filter, sort = VehicleSort.NEWEST)
@@ -106,4 +120,3 @@ class HomeViewModel(
         loadData()
     }
 }
-
