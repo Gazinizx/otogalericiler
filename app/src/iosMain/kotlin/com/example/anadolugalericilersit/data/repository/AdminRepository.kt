@@ -10,13 +10,12 @@ import com.example.anadolugalericilersit.utils.Resource
 actual class AdminRepository {
     actual suspend fun getAdminStats(): Resource<AdminStats> {
         return try {
-            FirestoreRestClient.syncDealersSuspend()
-            FirestoreRestClient.syncVehiclesSuspend()
-            val dealers = LocalStore.dealers.values.toList()
+            val dealers = FirestoreRestClient.fetchDealersFromCloud()
+            val vehicles = FirestoreRestClient.fetchVehiclesFromCloud()
+
             val totalDealers = dealers.size
             val pendingDealers = dealers.count { it.accountStatus == DealerStatus.PENDING }
 
-            val vehicles = LocalStore.vehicles.values.toList()
             val totalVehicles = vehicles.size
             val publishedVehicles = vehicles.count { it.status == VehicleStatus.PUBLISHED }
             val pendingVehicles = vehicles.count { it.status == VehicleStatus.PENDING }
