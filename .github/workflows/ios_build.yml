@@ -106,7 +106,7 @@ jobs:
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
         run: |
           set -euo pipefail
-          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          KEY_DIR="$RUNNER_TEMP"
           KEY_PATH="$KEY_DIR/AuthKey_${API_KEY_ID}.p8"
           mkdir -p "$KEY_DIR"
           chmod 700 "$KEY_DIR"
@@ -136,6 +136,7 @@ jobs:
         env:
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
         run: |
           set -euo pipefail
           if [[ -z "${API_KEY_ID//[[:space:]]/}" ]]; then
@@ -146,13 +147,14 @@ jobs:
             echo "::error::APP_STORE_CONNECT_ISSUER_ID is empty or unavailable to this workflow. Recreate this GitHub Actions secret with the App Store Connect Issuer ID."
             exit 1
           fi
-          # Use equals-form arguments so altool cannot misparse a secret as a missing positional value.
+          # altool/Transporter can change working directories; explicitly point it at the key folder.
           API_KEY_ID="$(printf '%s' "$API_KEY_ID" | tr -d '[:space:]')"
           API_ISSUER_ID="$(printf '%s' "$API_ISSUER_ID" | tr -d '[:space:]')"
           echo "App Store Connect identifiers present (key ID length: ${#API_KEY_ID}, issuer ID length: ${#API_ISSUER_ID})."
+          test -s "$API_PRIVATE_KEYS_DIR/AuthKey_${API_KEY_ID}.p8"
           xcrun altool --output-format xml \
             --upload-app \
             --file "$RUNNER_TEMP/ios-export/iosApp.ipa" \
             --type ios \
-            --api-key "$API_KEY_ID" \
-            --api-issuer "$API_ISSUER_ID"
+            --apiKey "$API_KEY_ID" \
+            --apiIssuer "$API_ISSUER_ID"
