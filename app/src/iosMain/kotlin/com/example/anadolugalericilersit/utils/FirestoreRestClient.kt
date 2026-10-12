@@ -105,6 +105,8 @@ object FirestoreRestClient {
                 val dealerId = extractStringField(chunk, "dealerId")
                 val dealerName = extractStringField(chunk, "galleryName")
                 val dealerCity = extractStringField(chunk, "city")
+                val priceStr = extractStringField(chunk, "price")
+                val price = priceStr.toDoubleOrNull() ?: 0.0
                 val statusStr = extractStringField(chunk, "status").ifBlank { "PUBLISHED" }
                 val status = try { VehicleStatus.valueOf(statusStr) } catch (_: Exception) { VehicleStatus.PUBLISHED }
 
@@ -115,6 +117,7 @@ object FirestoreRestClient {
                     dealerId = dealerId,
                     dealerName = dealerName,
                     dealerCity = dealerCity,
+                    price = price,
                     status = status
                 )
                 LocalStore.vehicles[idMatch] = vehicle
@@ -124,9 +127,18 @@ object FirestoreRestClient {
 
     private fun extractStringField(chunk: String, fieldName: String): String {
         try {
-            val fieldSection = chunk.substringAfter("\"$fieldName\" : {").substringBefore("}")
-            if (fieldSection.contains("\"stringValue\" :")) {
-                return fieldSection.substringAfter("\"stringValue\" : \"").substringBefore("\"")
+            val keyPattern = "\"$fieldName\""
+            val index = chunk.indexOf(keyPattern)
+            if (index == -1) return ""
+            val sub = chunk.substring(index)
+            if (sub.contains("\"stringValue\"")) {
+                return sub.substringAfter("\"stringValue\"").substringAfter("\"").substringBefore("\"")
+            }
+            if (sub.contains("\"integerValue\"")) {
+                return sub.substringAfter("\"integerValue\"").substringAfter("\"").substringBefore("\"")
+            }
+            if (sub.contains("\"doubleValue\"")) {
+                return sub.substringAfter("\"doubleValue\"").substringAfter(":").substringBefore(",").trim().replace("\"", "")
             }
         } catch (_: Exception) {}
         return ""
