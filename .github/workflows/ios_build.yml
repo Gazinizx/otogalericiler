@@ -136,9 +136,17 @@ jobs:
           API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
           set -euo pipefail
+          if [[ -z "${API_KEY_ID//[[:space:]]/}" ]]; then
+            echo "::error::APP_STORE_CONNECT_KEY_ID is empty or unavailable to this workflow. Recreate this GitHub Actions secret with the App Store Connect API Key ID."
+            exit 1
+          fi
+          if [[ -z "${API_ISSUER_ID//[[:space:]]/}" ]]; then
+            echo "::error::APP_STORE_CONNECT_ISSUER_ID is empty or unavailable to this workflow. Recreate this GitHub Actions secret with the App Store Connect Issuer ID."
+            exit 1
+          fi
           xcrun altool --output-format xml \
             --upload-app \
             --file "$RUNNER_TEMP/ios-export/iosApp.ipa" \
             --type ios \
-            --apiKey "$API_KEY_ID" \
-            --apiIssuer "$API_ISSUER_ID"
+            --api-key "$API_KEY_ID" \
+            --api-issuer "$API_ISSUER_ID"
