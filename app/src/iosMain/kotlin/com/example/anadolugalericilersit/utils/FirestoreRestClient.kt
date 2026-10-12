@@ -1,6 +1,5 @@
 package com.example.anadolugalericilersit.utils
 
-import com.example.anadolugalericilersit.data.local.LocalStore
 import com.example.anadolugalericilersit.data.model.*
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -12,51 +11,54 @@ object FirestoreRestClient {
     private const val PROJECT_ID = "galeri-6fa72"
     private const val BASE_URL = "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents"
 
-    suspend fun syncDealersSuspend() = suspendCancellableCoroutine { continuation ->
+    suspend fun fetchDealersFromCloud(): List<Dealer> = suspendCancellableCoroutine { continuation ->
         try {
             val url = NSURL.URLWithString("$BASE_URL/dealers")
             if (url == null) {
-                continuation.resume(Unit)
+                continuation.resume(emptyList())
                 return@suspendCancellableCoroutine
             }
             val task = NSURLSession.sharedSession.dataTaskWithURL(url) { data, _, _ ->
                 if (data != null) {
                     val jsonStr = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
                     if (jsonStr != null) {
-                        parseAndStoreDealers(jsonStr)
+                        continuation.resume(parseDealers(jsonStr))
+                        return@dataTaskWithURL
                     }
                 }
-                continuation.resume(Unit)
+                continuation.resume(emptyList())
             }
             task.resume()
         } catch (_: Exception) {
-            continuation.resume(Unit)
+            continuation.resume(emptyList())
         }
     }
 
-    suspend fun syncVehiclesSuspend() = suspendCancellableCoroutine { continuation ->
+    suspend fun fetchVehiclesFromCloud(): List<Vehicle> = suspendCancellableCoroutine { continuation ->
         try {
             val url = NSURL.URLWithString("$BASE_URL/vehicles")
             if (url == null) {
-                continuation.resume(Unit)
+                continuation.resume(emptyList())
                 return@suspendCancellableCoroutine
             }
             val task = NSURLSession.sharedSession.dataTaskWithURL(url) { data, _, _ ->
                 if (data != null) {
                     val jsonStr = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
                     if (jsonStr != null) {
-                        parseAndStoreVehicles(jsonStr)
+                        continuation.resume(parseVehicles(jsonStr))
+                        return@dataTaskWithURL
                     }
                 }
-                continuation.resume(Unit)
+                continuation.resume(emptyList())
             }
             task.resume()
         } catch (_: Exception) {
-            continuation.resume(Unit)
+            continuation.resume(emptyList())
         }
     }
 
-    private fun parseAndStoreDealers(json: String) {
+    private fun parseDealers(json: String): List<Dealer> {
+        val list = mutableListOf<Dealer>()
         try {
             val docChunks = json.split("\"name\" : \"")
             for (chunk in docChunks.drop(1)) {
@@ -75,25 +77,28 @@ object FirestoreRestClient {
                 val statusStr = extractStringField(chunk, "accountStatus").ifBlank { "PENDING" }
                 val status = try { DealerStatus.valueOf(statusStr) } catch (_: Exception) { DealerStatus.PENDING }
 
-                val dealer = Dealer(
-                    id = idMatch,
-                    ownerUid = ownerUid,
-                    galleryName = galleryName,
-                    phone = phone,
-                    email = email,
-                    city = city,
-                    district = district,
-                    address = address,
-                    taxNumber = taxNumber,
-                    iban = iban,
-                    accountStatus = status
+                list.add(
+                    Dealer(
+                        id = idMatch,
+                        ownerUid = ownerUid,
+                        galleryName = galleryName,
+                        phone = phone,
+                        email = email,
+                        city = city,
+                        district = district,
+                        address = address,
+                        taxNumber = taxNumber,
+                        iban = iban,
+                        accountStatus = status
+                    )
                 )
-                LocalStore.dealers[idMatch] = dealer
             }
         } catch (_: Exception) {}
+        return list
     }
 
-    private fun parseAndStoreVehicles(json: String) {
+    private fun parseVehicles(json: String): List<Vehicle> {
+        val list = mutableListOf<Vehicle>()
         try {
             val docChunks = json.split("\"name\" : \"")
             for (chunk in docChunks.drop(1)) {
@@ -110,19 +115,21 @@ object FirestoreRestClient {
                 val statusStr = extractStringField(chunk, "status").ifBlank { "PUBLISHED" }
                 val status = try { VehicleStatus.valueOf(statusStr) } catch (_: Exception) { VehicleStatus.PUBLISHED }
 
-                val vehicle = Vehicle(
-                    id = idMatch,
-                    brand = brand,
-                    model = model,
-                    dealerId = dealerId,
-                    dealerName = dealerName,
-                    dealerCity = dealerCity,
-                    price = price,
-                    status = status
+                list.add(
+                    Vehicle(
+                        id = idMatch,
+                        brand = brand,
+                        model = model,
+                        dealerId = dealerId,
+                        dealerName = dealerName,
+                        dealerCity = dealerCity,
+                        price = price,
+                        status = status
+                    )
                 )
-                LocalStore.vehicles[idMatch] = vehicle
             }
         } catch (_: Exception) {}
+        return list
     }
 
     private fun extractStringField(chunk: String, fieldName: String): String {

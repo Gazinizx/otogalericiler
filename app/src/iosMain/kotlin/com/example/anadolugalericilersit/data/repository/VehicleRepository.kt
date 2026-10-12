@@ -16,28 +16,25 @@ actual class VehicleRepository actual constructor() {
         sort: VehicleSort,
         limit: Int
     ): Resource<List<Vehicle>> {
-        FirestoreRestClient.syncVehiclesSuspend()
-        var list = LocalStore.vehicles.values.toList()
+        var list = FirestoreRestClient.fetchVehiclesFromCloud()
         if (filter.brand != null) list = list.filter { it.brand.equals(filter.brand, true) }
         return Resource.Success(list.take(limit))
     }
 
     actual suspend fun getVehicleById(vehicleId: String): Resource<Vehicle> {
-        FirestoreRestClient.syncVehiclesSuspend()
-        val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
+        val list = FirestoreRestClient.fetchVehiclesFromCloud()
+        val v = list.find { it.id == vehicleId } ?: return Resource.Error("Araç bulunamadı")
         return Resource.Success(v)
     }
 
     actual suspend fun getVehiclesByDealer(dealerId: String, statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
-        FirestoreRestClient.syncVehiclesSuspend()
-        var list = LocalStore.vehicles.values.filter { it.dealerId == dealerId }
+        var list = FirestoreRestClient.fetchVehiclesFromCloud().filter { it.dealerId == dealerId }
         if (statusFilter != null) list = list.filter { it.status == statusFilter }
         return Resource.Success(list)
     }
 
     actual suspend fun getVehiclesByStatusForAdmin(statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
-        FirestoreRestClient.syncVehiclesSuspend()
-        var list = LocalStore.vehicles.values.toList()
+        var list = FirestoreRestClient.fetchVehiclesFromCloud()
         if (statusFilter != null) list = list.filter { it.status == statusFilter }
         return Resource.Success(list)
     }
@@ -81,7 +78,7 @@ actual class VehicleRepository actual constructor() {
         status: VehicleStatus,
         rejectionReason: String
     ): Resource<Unit> {
-        val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
+        val v = LocalStore.vehicles[vehicleId] ?: Vehicle(id = vehicleId)
         val updated = v.copy(status = status, rejectionReason = rejectionReason)
         LocalStore.vehicles[vehicleId] = updated
         try {
@@ -101,7 +98,7 @@ actual class VehicleRepository actual constructor() {
         damgaStatus: String,
         approved: Boolean
     ): Resource<Unit> {
-        val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
+        val v = LocalStore.vehicles[vehicleId] ?: Vehicle(id = vehicleId)
         val updated = v.copy(hasDamga = approved)
         LocalStore.vehicles[vehicleId] = updated
         try {
@@ -116,8 +113,6 @@ actual class VehicleRepository actual constructor() {
     }
 
     actual suspend fun incrementViewCount(vehicleId: String, currentUserId: String?): Resource<Unit> {
-        val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
-        LocalStore.vehicles[vehicleId] = v.copy(viewCount = v.viewCount + 1)
         return Resource.Success(Unit)
     }
 
@@ -131,14 +126,6 @@ actual class VehicleRepository actual constructor() {
 
     actual suspend fun deleteAllVehicles(): Resource<Unit> {
         LocalStore.vehicles.clear()
-        LocalStore.dealers.values.forEach { d ->
-            LocalStore.dealers[d.id] = d.copy(
-                totalListings = 0,
-                activeListings = 0,
-                soldListings = 0,
-                pendingListings = 0
-            )
-        }
         return Resource.Success(Unit)
     }
 }

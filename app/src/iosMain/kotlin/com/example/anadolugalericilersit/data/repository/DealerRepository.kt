@@ -14,20 +14,19 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun getDealers(status: DealerStatus?): Resource<List<Dealer>> {
-        FirestoreRestClient.syncDealersSuspend()
-        val all = LocalStore.dealers.values.toList()
-        val filtered = if (status != null) all.filter { it.accountStatus == status } else all
+        val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
+        val filtered = if (status != null) cloudDealers.filter { it.accountStatus == status } else cloudDealers
         return Resource.Success(filtered)
     }
 
     actual suspend fun getDealerById(dealerId: String): Resource<Dealer> {
-        FirestoreRestClient.syncDealersSuspend()
-        val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
+        val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
+        val dealer = cloudDealers.find { it.id == dealerId } ?: return Resource.Error("Galeri bulunamadı")
         return Resource.Success(dealer)
     }
 
     actual suspend fun updateDealerStatus(dealerId: String, newStatus: DealerStatus, rejectionReason: String): Resource<Unit> {
-        val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
+        val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
         val updated = dealer.copy(accountStatus = newStatus, rejectionReason = rejectionReason)
         LocalStore.dealers[dealerId] = updated
         try {
@@ -66,18 +65,16 @@ actual class DealerRepository actual constructor() {
 
     actual suspend fun updateDealerLogo(context: Any?, dealerId: String, logoUri: Any): Resource<String> {
         val url = logoUri.toString()
-        val dealer = LocalStore.dealers[dealerId]
-        if (dealer != null) {
-            LocalStore.dealers[dealerId] = dealer.copy(logoUrl = url)
-            try {
-                val fields = """
-                    {
-                      "logoUrl": { "stringValue": "$url" }
-                    }
-                """.trimIndent()
-                FirestoreSync.patchDocument("dealers", dealerId, fields)
-            } catch (_: Exception) {}
-        }
+        val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
+        LocalStore.dealers[dealerId] = dealer.copy(logoUrl = url)
+        try {
+            val fields = """
+                {
+                  "logoUrl": { "stringValue": "$url" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("dealers", dealerId, fields)
+        } catch (_: Exception) {}
         return Resource.Success(url)
     }
 
@@ -87,7 +84,7 @@ actual class DealerRepository actual constructor() {
         isDebt: Boolean,
         note: String
     ): Resource<Unit> {
-        val dealer = LocalStore.dealers[dealerId] ?: return Resource.Error("Galeri bulunamadı")
+        val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
         val newDebt = if (isDebt) dealer.totalDebt + amount else (dealer.totalDebt - amount).coerceAtLeast(0.0)
         val updated = dealer.copy(totalDebt = newDebt)
         LocalStore.dealers[dealerId] = updated
@@ -108,19 +105,17 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun updateDamgaCount(dealerId: String, newDamgaCount: Int): Resource<Unit> {
-        val dealer = LocalStore.dealers[dealerId]
-        if (dealer != null) {
-            val updated = dealer.copy(damgaCount = newDamgaCount)
-            LocalStore.dealers[dealerId] = updated
-            try {
-                val fields = """
-                    {
-                      "damgaCount": { "integerValue": "$newDamgaCount" }
-                    }
-                """.trimIndent()
-                FirestoreSync.patchDocument("dealers", dealerId, fields)
-            } catch (_: Exception) {}
-        }
+        val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
+        val updated = dealer.copy(damgaCount = newDamgaCount)
+        LocalStore.dealers[dealerId] = updated
+        try {
+            val fields = """
+                {
+                  "damgaCount": { "integerValue": "$newDamgaCount" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("dealers", dealerId, fields)
+        } catch (_: Exception) {}
         return Resource.Success(Unit)
     }
 }
