@@ -104,11 +104,13 @@ jobs:
         env:
           API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          KEY_PATH: ${{ runner.temp }}/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
         run: |
           set -euo pipefail
-          KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
-          chmod 700 "$RUNNER_TEMP"
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
+          KEY_PATH="$KEY_DIR/AuthKey_${API_KEY_ID}.p8"
+          mkdir -p "$KEY_DIR"
+          chmod 700 "$KEY_DIR"
+          export KEY_PATH
           python3 - <<'PY'
           import os
           from pathlib import Path
@@ -152,5 +154,5 @@ jobs:
             --upload-app \
             --file "$RUNNER_TEMP/ios-export/iosApp.ipa" \
             --type ios \
-            --api-key="$API_KEY_ID" \
-            --api-issuer="$API_ISSUER_ID"
+            --api-key "$API_KEY_ID" \
+            --api-issuer "$API_ISSUER_ID"
