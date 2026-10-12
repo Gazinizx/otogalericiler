@@ -11,6 +11,14 @@ object FirestoreRestClient {
     private const val PROJECT_ID = "galeri-6fa72"
     private const val BASE_URL = "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents"
 
+    suspend fun syncDealersSuspend() {
+        fetchDealersFromCloud()
+    }
+
+    suspend fun syncVehiclesSuspend() {
+        fetchVehiclesFromCloud()
+    }
+
     suspend fun fetchDealersFromCloud(): List<Dealer> = suspendCancellableCoroutine { continuation ->
         try {
             val url = NSURL.URLWithString("$BASE_URL/dealers")
