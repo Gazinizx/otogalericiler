@@ -5,6 +5,7 @@ import com.example.anadolugalericilersit.data.model.Dealer
 import com.example.anadolugalericilersit.data.model.DealerStatus
 import com.example.anadolugalericilersit.data.model.Role
 import com.example.anadolugalericilersit.data.model.User
+import com.example.anadolugalericilersit.utils.FirestoreSync
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.SessionManager
 import com.example.anadolugalericilersit.utils.generateUuid
@@ -185,6 +186,50 @@ actual class AuthRepository actual constructor() {
         LocalStore.dealers[uid] = dealer
         LocalStore.currentLoggedInUid = uid
         SessionManager.saveSession(uid)
+
+        try {
+            val dealerFields = """
+                {
+                  "id": { "stringValue": "${dealer.id}" },
+                  "ownerUid": { "stringValue": "${dealer.ownerUid}" },
+                  "galleryName": { "stringValue": "${dealer.galleryName}" },
+                  "authorizedName": { "stringValue": "${dealer.authorizedName}" },
+                  "phone": { "stringValue": "${dealer.phone}" },
+                  "email": { "stringValue": "${dealer.email}" },
+                  "city": { "stringValue": "${dealer.city}" },
+                  "district": { "stringValue": "${dealer.district}" },
+                  "address": { "stringValue": "${dealer.address}" },
+                  "taxNumber": { "stringValue": "${dealer.taxNumber}" },
+                  "iban": { "stringValue": "${dealer.iban}" },
+                  "ibanOwnerName": { "stringValue": "${dealer.ibanOwnerName}" },
+                  "description": { "stringValue": "${dealer.description}" },
+                  "logoUrl": { "stringValue": "${dealer.logoUrl}" },
+                  "accountStatus": { "stringValue": "${dealer.accountStatus.name}" },
+                  "totalListings": { "integerValue": "${dealer.totalListings}" },
+                  "activeListings": { "integerValue": "${dealer.activeListings}" },
+                  "soldListings": { "integerValue": "${dealer.soldListings}" },
+                  "pendingListings": { "integerValue": "${dealer.pendingListings}" },
+                  "totalDebt": { "doubleValue": ${dealer.totalDebt} },
+                  "damgaCount": { "integerValue": "${dealer.damgaCount}" },
+                  "createdAt": { "integerValue": "${dealer.createdAt}" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("dealers", dealer.id, dealerFields)
+
+            val userFields = """
+                {
+                  "uid": { "stringValue": "${user.uid}" },
+                  "email": { "stringValue": "${user.email}" },
+                  "name": { "stringValue": "${user.name}" },
+                  "role": { "stringValue": "${user.role.name}" },
+                  "dealerId": { "stringValue": "${user.dealerId ?: ""}" },
+                  "canIssueDamga": { "booleanValue": ${user.canIssueDamga} },
+                  "createdAt": { "integerValue": "${user.createdAt}" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("users", user.uid, userFields)
+        } catch (_: Exception) {}
+
         return Resource.Success(dealer)
     }
 
