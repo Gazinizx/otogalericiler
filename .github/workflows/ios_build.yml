@@ -104,12 +104,11 @@ jobs:
         env:
           API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          KEY_PATH: ${{ runner.temp }}/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
         run: |
           set -euo pipefail
-          KEY_DIR="$HOME/private_keys"
-          KEY_PATH="$KEY_DIR/AuthKey_${API_KEY_ID}.p8"
-          mkdir -p "$KEY_DIR"
-          chmod 700 "$KEY_DIR"
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
+          chmod 700 "$RUNNER_TEMP"
           python3 - <<'PY'
           import os
           from pathlib import Path
@@ -119,7 +118,8 @@ jobs:
               key = key.replace("\\n", "\n")
           if not key.startswith("-----BEGIN PRIVATE KEY-----") or not key.endswith("-----END PRIVATE KEY-----"):
               raise SystemExit("::error::APP_STORE_CONNECT_PRIVATE_KEY must contain the complete PEM .p8 key, including BEGIN/END lines.")
-          path = Path.home() / "private_keys" / f"AuthKey_{os.environ['API_KEY_ID']}.p8"
+          path = Path(os.environ["KEY_PATH"])
+          path.parent.mkdir(parents=True, exist_ok=True)
           path.write_text(key + "\n", encoding="utf-8")
           path.chmod(0o600)
           PY
