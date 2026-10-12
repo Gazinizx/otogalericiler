@@ -6,6 +6,7 @@ import com.example.anadolugalericilersit.data.model.VehicleFilter
 import com.example.anadolugalericilersit.data.model.VehicleSort
 import com.example.anadolugalericilersit.data.model.VehicleStatus
 import com.example.anadolugalericilersit.utils.FirestoreRestClient
+import com.example.anadolugalericilersit.utils.FirestoreSync
 import com.example.anadolugalericilersit.utils.Resource
 import com.example.anadolugalericilersit.utils.generateUuid
 
@@ -52,6 +53,26 @@ actual class VehicleRepository actual constructor() {
         val id = vehicle.id.ifBlank { generateUuid() }
         val saved = vehicle.copy(id = id)
         LocalStore.vehicles[id] = saved
+
+        try {
+            val fields = """
+                {
+                  "id": { "stringValue": "${saved.id}" },
+                  "dealerId": { "stringValue": "${saved.dealerId}" },
+                  "dealerName": { "stringValue": "${saved.dealerName}" },
+                  "dealerCity": { "stringValue": "${saved.dealerCity}" },
+                  "brand": { "stringValue": "${saved.brand}" },
+                  "model": { "stringValue": "${saved.model}" },
+                  "year": { "integerValue": "${saved.year}" },
+                  "price": { "doubleValue": ${saved.price} },
+                  "km": { "integerValue": "${saved.km}" },
+                  "status": { "stringValue": "${saved.status.name}" },
+                  "createdAt": { "integerValue": "${saved.createdAt}" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("vehicles", saved.id, fields)
+        } catch (_: Exception) {}
+
         return Resource.Success(saved)
     }
 
@@ -61,7 +82,17 @@ actual class VehicleRepository actual constructor() {
         rejectionReason: String
     ): Resource<Unit> {
         val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
-        LocalStore.vehicles[vehicleId] = v.copy(status = status, rejectionReason = rejectionReason)
+        val updated = v.copy(status = status, rejectionReason = rejectionReason)
+        LocalStore.vehicles[vehicleId] = updated
+        try {
+            val fields = """
+                {
+                  "status": { "stringValue": "${updated.status.name}" },
+                  "rejectionReason": { "stringValue": "${updated.rejectionReason}" }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("vehicles", vehicleId, fields)
+        } catch (_: Exception) {}
         return Resource.Success(Unit)
     }
 
@@ -71,7 +102,16 @@ actual class VehicleRepository actual constructor() {
         approved: Boolean
     ): Resource<Unit> {
         val v = LocalStore.vehicles[vehicleId] ?: return Resource.Error("Araç bulunamadı")
-        LocalStore.vehicles[vehicleId] = v.copy(hasDamga = approved)
+        val updated = v.copy(hasDamga = approved)
+        LocalStore.vehicles[vehicleId] = updated
+        try {
+            val fields = """
+                {
+                  "hasDamga": { "booleanValue": $approved }
+                }
+            """.trimIndent()
+            FirestoreSync.patchDocument("vehicles", vehicleId, fields)
+        } catch (_: Exception) {}
         return Resource.Success(Unit)
     }
 
@@ -83,6 +123,9 @@ actual class VehicleRepository actual constructor() {
 
     actual suspend fun deleteVehicle(vehicleId: String): Resource<Unit> {
         LocalStore.vehicles.remove(vehicleId)
+        try {
+            FirestoreSync.deleteDocument("vehicles", vehicleId)
+        } catch (_: Exception) {}
         return Resource.Success(Unit)
     }
 
