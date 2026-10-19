@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>601312830767-j0a6ksoem7olf8sidabpp72fvfn0pkkv.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.601312830767-j0a6ksoem7olf8sidabpp72fvfn0pkkv</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>601312830767-2dt7med20id34vbh8ajk2c82krsiuuol.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD4utIRNDPSzP9C6agg6snghg8hvPMwt1g</string>
+	<key>GCM_SENDER_ID</key>
+	<string>601312830767</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.anadolugalericilersitesi.app</string>
+	<key>PROJECT_ID</key>
+	<string>galeri-6fa72</string>
+	<key>STORAGE_BUCKET</key>
+	<string>galeri-6fa72.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:601312830767:ios:e70e39a028a25bb54d6dda</string>
+</dict>
+</plist>
