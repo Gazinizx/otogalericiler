@@ -12,37 +12,27 @@ import platform.Foundation.dataUsingEncoding
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-/**
- * Minimal Firestore REST writer used by the iOS target.
- *
- * The caller supplies Firestore's typed field map, e.g.
- * {"name":{"stringValue":"Dealer"}}. We wrap it in the document REST
- * envelope and use an update mask so fields not included in the request
- * are not accidentally deleted.
- */
 @OptIn(BetaInteropApi::class)
 object FirestoreSync {
     private const val PROJECT_ID = "galeri-6fa72"
     private const val DOCUMENTS_URL =
-        "https://firestore.googleapis.com/v1/projects/$PROJECT_ID/databases/(default)/documents"
+        "https://firestore.googleapis.com/v1/projects/" + PROJECT_ID + "/databases/(default)/documents"
 
     suspend fun patchDocument(collection: String, documentId: String, fieldsJson: String) {
         require(collection.matches(Regex("[A-Za-z0-9_-]+"))) { "Geçersiz Firestore koleksiyonu" }
         require(documentId.isNotBlank()) { "Firestore belge kimliği boş olamaz" }
 
-        // Call sites currently provide one top-level Firestore field per line.
-        val fieldNames = Regex("""(?m)^\\s*"([^"]+)"\\s*:""")
+        // The input is a Firestore REST fields object; identify its top-level field paths.
+        val fieldNames = Regex("""(?m)^\s*"([^"]+)"\s*:""")
             .findAll(fieldsJson)
             .map { it.groupValues[1] }
             .distinct()
             .toList()
         require(fieldNames.isNotEmpty()) { "Kaydedilecek Firestore alanı bulunamadı" }
 
-        val encodedId = documentId.replace("%", "%25").replace("/", "%2F").replace(" ", "%20")
-        val mask = fieldNames.joinToString("&") {
-            "updateMask.fieldPaths=" + it.replace("%", "%25").replace(" ", "%20")
-        }
-        val url = NSURL.URLWithString("$DOCUMENTS_URL/$collection/$encodedId?$mask")
+        val encodedId = encodePathSegment(documentId)
+        val mask = fieldNames.joinToString("&") { "updateMask.fieldPaths=" + encodeQueryValue(it) }
+        val url = NSURL.URLWithString(DOCUMENTS_URL + "/" + collection + "/" + encodedId + "?" + mask)
             ?: throw IllegalArgumentException("Firestore URL oluşturulamadı")
         val request = NSMutableURLRequest.requestWithURL(url)
         request.HTTPMethod = "PATCH"
@@ -50,20 +40,24 @@ object FirestoreSync {
         val body = """{"fields":$fieldsJson}"""
         request.HTTPBody = (body as NSString).dataUsingEncoding(NSUTF8StringEncoding)
             ?: throw IllegalStateException("Firestore isteği kodlanamadı")
-
         execute(request, "Firestore kaydı başarısız")
     }
 
     suspend fun deleteDocument(collection: String, documentId: String) {
         require(collection.matches(Regex("[A-Za-z0-9_-]+"))) { "Geçersiz Firestore koleksiyonu" }
         require(documentId.isNotBlank()) { "Firestore belge kimliği boş olamaz" }
-        val encodedId = documentId.replace("%", "%25").replace("/", "%2F").replace(" ", "%20")
-        val url = NSURL.URLWithString("$DOCUMENTS_URL/$collection/$encodedId")
+        val url = NSURL.URLWithString(DOCUMENTS_URL + "/" + collection + "/" + encodePathSegment(documentId))
             ?: throw IllegalArgumentException("Firestore URL oluşturulamadı")
         val request = NSMutableURLRequest.requestWithURL(url)
         request.HTTPMethod = "DELETE"
         execute(request, "Firestore silme işlemi başarısız")
     }
+
+    private fun encodePathSegment(value: String): String =
+        value.replace("%", "%25").replace("/", "%2F").replace(" ", "%20")
+
+    private fun encodeQueryValue(value: String): String =
+        value.replace("%", "%25").replace(" ", "%20").replace("/", "%2F")
 
     private suspend fun execute(request: NSMutableURLRequest, fallbackMessage: String) =
         suspendCancellableCoroutine<Unit> { continuation ->
