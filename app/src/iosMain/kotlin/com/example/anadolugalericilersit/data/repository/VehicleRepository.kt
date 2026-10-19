@@ -49,9 +49,8 @@ actual class VehicleRepository actual constructor() {
     ): Resource<Vehicle> {
         val id = vehicle.id.ifBlank { generateUuid() }
         val saved = vehicle.copy(id = id)
-        LocalStore.vehicles[id] = saved
 
-        try {
+        return try {
             val fields = """
                 {
                   "id": { "stringValue": "${saved.id}" },
@@ -68,9 +67,11 @@ actual class VehicleRepository actual constructor() {
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("vehicles", saved.id, fields)
-        } catch (_: Exception) {}
-
-        return Resource.Success(saved)
+            LocalStore.vehicles[id] = saved
+            Resource.Success(saved)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "İlan buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun updateVehicleStatus(
@@ -80,8 +81,7 @@ actual class VehicleRepository actual constructor() {
     ): Resource<Unit> {
         val v = LocalStore.vehicles[vehicleId] ?: Vehicle(id = vehicleId)
         val updated = v.copy(status = status, rejectionReason = rejectionReason)
-        LocalStore.vehicles[vehicleId] = updated
-        try {
+        return try {
             val fields = """
                 {
                   "status": { "stringValue": "${updated.status.name}" },
@@ -89,8 +89,11 @@ actual class VehicleRepository actual constructor() {
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("vehicles", vehicleId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.vehicles[vehicleId] = updated
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "İlan durumu buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun updateVehicleDamgaStatus(
@@ -100,16 +103,18 @@ actual class VehicleRepository actual constructor() {
     ): Resource<Unit> {
         val v = LocalStore.vehicles[vehicleId] ?: Vehicle(id = vehicleId)
         val updated = v.copy(hasDamga = approved)
-        LocalStore.vehicles[vehicleId] = updated
-        try {
+        return try {
             val fields = """
                 {
                   "hasDamga": { "booleanValue": $approved }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("vehicles", vehicleId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.vehicles[vehicleId] = updated
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Damga durumu buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun incrementViewCount(vehicleId: String, currentUserId: String?): Resource<Unit> {
@@ -117,11 +122,13 @@ actual class VehicleRepository actual constructor() {
     }
 
     actual suspend fun deleteVehicle(vehicleId: String): Resource<Unit> {
-        LocalStore.vehicles.remove(vehicleId)
-        try {
+        return try {
             FirestoreSync.deleteDocument("vehicles", vehicleId)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.vehicles.remove(vehicleId)
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "İlan buluttan silinemedi")
+        }
     }
 
     actual suspend fun deleteAllVehicles(): Resource<Unit> {
