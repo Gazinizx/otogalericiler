@@ -2,13 +2,7 @@ package com.example.anadolugalericilersit.utils
 
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.coroutines.suspendCancellableCoroutine
-import platform.Foundation.NSHTTPURLResponse
-import platform.Foundation.NSMutableURLRequest
-import platform.Foundation.NSString
-import platform.Foundation.NSURL
-import platform.Foundation.NSURLSession
-import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.dataUsingEncoding
+import platform.Foundation.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -22,7 +16,6 @@ object FirestoreSync {
         require(collection.matches(Regex("[A-Za-z0-9_-]+"))) { "Geçersiz Firestore koleksiyonu" }
         require(documentId.isNotBlank()) { "Firestore belge kimliği boş olamaz" }
 
-        // The input is a Firestore REST fields object; identify its top-level field paths.
         val fieldNames = Regex("""(?m)^\s*"([^"]+)"\s*:""")
             .findAll(fieldsJson)
             .map { it.groupValues[1] }
@@ -61,23 +54,26 @@ object FirestoreSync {
 
     private suspend fun execute(request: NSMutableURLRequest, fallbackMessage: String) =
         suspendCancellableCoroutine<Unit> { continuation ->
-            val task = NSURLSession.sharedSession.dataTaskWithRequest(request) { _, response, error ->
-                if (continuation.isCancelled) return@dataTaskWithRequest
-                if (error != null) {
-                    continuation.resumeWithException(
-                        IllegalStateException(error.localizedDescription ?: fallbackMessage)
-                    )
-                    return@dataTaskWithRequest
+            val task = NSURLSession.sharedSession.dataTaskWithRequest(
+                request,
+                completionHandler = { _: NSData?, response: NSURLResponse?, error: NSError? ->
+                    if (continuation.isCancelled) return@dataTaskWithRequest
+                    if (error != null) {
+                        continuation.resumeWithException(
+                            IllegalStateException(error.localizedDescription ?: fallbackMessage)
+                        )
+                        return@dataTaskWithRequest
+                    }
+                    val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
+                    if (status in 200..299) {
+                        continuation.resume(Unit)
+                    } else {
+                        continuation.resumeWithException(
+                            IllegalStateException("$fallbackMessage (HTTP $status)")
+                        )
+                    }
                 }
-                val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-                if (status in 200..299) {
-                    continuation.resume(Unit)
-                } else {
-                    continuation.resumeWithException(
-                        IllegalStateException("$fallbackMessage (HTTP $status)")
-                    )
-                }
-            }
+            )
             continuation.invokeOnCancellation { task.cancel() }
             task.resume()
         }
