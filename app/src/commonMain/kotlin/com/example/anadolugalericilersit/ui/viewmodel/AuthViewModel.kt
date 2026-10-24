@@ -26,9 +26,6 @@ class AuthViewModel(
     private val _registerState = MutableStateFlow<Resource<Dealer>>(Resource.Empty())
     val registerState: StateFlow<Resource<Dealer>> = _registerState.asStateFlow()
 
-    init {
-        checkSession()
-    }
 
     fun checkSession() {
         if (!authRepository.isUserLoggedIn()) {
@@ -38,16 +35,22 @@ class AuthViewModel(
 
         viewModelScope.launch {
             _authState.value = Resource.Loading()
-            val userResult = authRepository.getCurrentUser()
-            _authState.value = userResult
+            try {
+                val userResult = authRepository.getCurrentUser()
+                _authState.value = userResult
 
-            if (userResult is Resource.Success && userResult.data != null) {
-                val user = userResult.data
-                if (user.role != Role.SUPER_ADMIN && user.role != Role.ADMIN) {
-                    loadDealerProfile()
-                } else {
-                    _dealerState.value = Resource.Empty()
+                if (userResult is Resource.Success && userResult.data != null) {
+                    val user = userResult.data
+                    if (user.role != Role.SUPER_ADMIN && user.role != Role.ADMIN) {
+                        loadDealerProfile()
+                    } else {
+                        _dealerState.value = Resource.Empty()
+                    }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _authState.value = Resource.Error(e.message ?: "Oturum kontrol edilemedi")
             }
         }
     }
@@ -55,8 +58,13 @@ class AuthViewModel(
     fun loadDealerProfile() {
         viewModelScope.launch {
             _dealerState.value = Resource.Loading()
-            val result = authRepository.getCurrentDealerProfile()
-            _dealerState.value = result
+            try {
+                _dealerState.value = authRepository.getCurrentDealerProfile()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _dealerState.value = Resource.Error(e.message ?: "Galeri profili yüklenemedi")
+            }
         }
     }
 
