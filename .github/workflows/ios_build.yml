@@ -140,8 +140,11 @@ jobs:
           API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
           set -euo pipefail
-          IPA_PATH="$RUNNER_TEMP/ios-export/iosApp.ipa"
+          EXPORT_DIR="$RUNNER_TEMP/ios-export"
           KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
-          test -s "$IPA_PATH" || { echo "::error::Exported IPA not found: $IPA_PATH"; ls -la "$RUNNER_TEMP/ios-export"; exit 1; }
+          # Xcode names the IPA after the app (AnadoluOtogalericileri.ipa), not the scheme (iosApp).
+          IPA_PATH="$(find "$EXPORT_DIR" -maxdepth 1 -type f -name "*.ipa" -print -quit)"
+          test -n "$IPA_PATH" && test -s "$IPA_PATH" || { echo "::error::No exported IPA found in $EXPORT_DIR"; ls -la "$EXPORT_DIR"; exit 1; }
           test -s "$KEY_PATH" || { echo "::error::App Store Connect API key file not found: $KEY_PATH"; exit 1; }
+          echo "Uploading IPA: $(basename "$IPA_PATH") ($(stat -f%z "$IPA_PATH") bytes)"
           xcrun altool --upload-app --type ios --file "$IPA_PATH" --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID"
