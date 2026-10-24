@@ -54,10 +54,6 @@ class HomeViewModel(
     private val _versionUpdateState = MutableStateFlow(UpdateDialogState())
     val versionUpdateState: StateFlow<UpdateDialogState> = _versionUpdateState.asStateFlow()
 
-    init {
-        loadData()
-    }
-
     fun loadData() {
         viewModelScope.launch {
             _vehiclesState.value = Resource.Loading()
@@ -69,23 +65,47 @@ class HomeViewModel(
                 val notifRes = notificationRepository.getNotifications("all")
                 if (notifRes is Resource.Success) {
                     _announcementsState.value = notifRes
+                } else if (notifRes is Resource.Error) {
+                    _announcementsState.value = notifRes
                 }
-            } catch (_: Exception) {}
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _announcementsState.value = Resource.Error(e.message ?: "Duyurular yüklenemedi")
+            }
 
             val filter = VehicleFilter(brand = _selectedBrand.value)
-            val vehiclesResult = vehicleRepository.getVehicles(filter = filter, sort = VehicleSort.NEWEST)
-            _vehiclesState.value = vehiclesResult
+            try {
+                _vehiclesState.value = vehicleRepository.getVehicles(filter = filter, sort = VehicleSort.NEWEST)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _vehiclesState.value = Resource.Error(e.message ?: "Araçlar yüklenemedi")
+            }
 
-            val dealersResult = dealerRepository.getAllDealers(statusFilter = DealerStatus.APPROVED)
-            _dealersState.value = dealersResult
+            try {
+                _dealersState.value = dealerRepository.getAllDealers(statusFilter = DealerStatus.APPROVED)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _dealersState.value = Resource.Error(e.message ?: "Galeriler yüklenemedi")
+            }
 
-            // Recommended (Beğenebileceğiniz Araçlar - sorted by view count / popularity)
-            val recResult = vehicleRepository.getVehicles(sort = VehicleSort.PRICE_DESC, limit = 10)
-            _recommendedState.value = recResult
+            try {
+                _recommendedState.value = vehicleRepository.getVehicles(sort = VehicleSort.PRICE_DESC, limit = 10)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _recommendedState.value = Resource.Error(e.message ?: "Önerilen araçlar yüklenemedi")
+            }
 
-            // New Arrivals (Yeni Gelen Araçlar - Öne çıkanlar kısmında)
-            val newArrivalsResult = vehicleRepository.getVehicles(sort = VehicleSort.NEWEST, limit = 10)
-            _newArrivalsState.value = newArrivalsResult
+            try {
+                _newArrivalsState.value = vehicleRepository.getVehicles(sort = VehicleSort.NEWEST, limit = 10)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _newArrivalsState.value = Resource.Error(e.message ?: "Yeni araçlar yüklenemedi")
+            }
         }
     }
 
