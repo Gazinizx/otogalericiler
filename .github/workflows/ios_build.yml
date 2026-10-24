@@ -134,11 +134,14 @@ jobs:
           echo "API key file format validated."
 
       - name: Upload IPA to App Store Connect
-        uses: apple-actions/upload-testflight-build@v5
-        with:
-          app-path: ${{ runner.temp }}/ios-export/iosApp.ipa
-          issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          api-key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          api-private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-          uses-non-exempt-encryption: 'false'
-          wait-for-processing: 'false'
+        shell: bash
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          IPA_PATH="$RUNNER_TEMP/ios-export/iosApp.ipa"
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
+          test -s "$IPA_PATH" || { echo "::error::Exported IPA not found: $IPA_PATH"; ls -la "$RUNNER_TEMP/ios-export"; exit 1; }
+          test -s "$KEY_PATH" || { echo "::error::App Store Connect API key file not found: $KEY_PATH"; exit 1; }
+          xcrun altool --upload-app --type ios --file "$IPA_PATH" --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID"
