@@ -108,7 +108,8 @@ jobs:
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
         run: |
           set -euo pipefail
-          KEY_DIR="$RUNNER_TEMP"
+          # altool searches the standard App Store Connect key directory.
+          KEY_DIR="$HOME/.appstoreconnect/private_keys"
           KEY_PATH="$KEY_DIR/AuthKey_${API_KEY_ID}.p8"
           mkdir -p "$KEY_DIR"
           chmod 700 "$KEY_DIR"
@@ -141,7 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           EXPORT_DIR="$RUNNER_TEMP/ios-export"
-          KEY_PATH="$RUNNER_TEMP/AuthKey_${API_KEY_ID}.p8"
+          KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8"
           # Xcode names the IPA after the app (AnadoluOtogalericileri.ipa), not the scheme (iosApp).
           IPA_PATH="$(find "$EXPORT_DIR" -maxdepth 1 -type f -name "*.ipa" -print -quit)"
           test -n "$IPA_PATH" && test -s "$IPA_PATH" || { echo "::error::No exported IPA found in $EXPORT_DIR"; ls -la "$EXPORT_DIR"; exit 1; }
