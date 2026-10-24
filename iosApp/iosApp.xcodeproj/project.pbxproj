@@ -156,7 +156,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Galericiler";
+				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Otogalericileri";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Araç fotoğrafı çekmek için kamera erişimi gerekir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Araç fotoğrafı seçmek için galeri erişimi gerekir.";
@@ -191,7 +191,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Galericiler";
+				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Otogalericileri";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Araç fotoğrafı çekmek için kamera erişimi gerekir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Araç fotoğrafı seçmek için galeri erişimi gerekir.";
@@ -225,7 +225,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Galericiler";
+				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Otogalericileri";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Araç fotoğrafı çekmek için kamera erişimi gerekir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Araç fotoğrafı seçmek için galeri erişimi gerekir.";
@@ -258,7 +258,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Galericiler";
+				INFOPLIST_KEY_CFBundleDisplayName = "Anadolu Otogalericileri";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Araç fotoğrafı çekmek için kamera erişimi gerekir.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Araç fotoğrafı seçmek için galeri erişimi gerekir.";
