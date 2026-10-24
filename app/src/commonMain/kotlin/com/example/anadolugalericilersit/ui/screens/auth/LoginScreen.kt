@@ -48,6 +48,11 @@ fun LoginScreen(
 
     val authState by authViewModel.authState.collectAsState()
 
+    // Start session restoration only after the login screen is composed.
+    LaunchedEffect(Unit) {
+        authViewModel.checkSession()
+    }
+
     LaunchedEffect(authState) {
         if (authState is Resource.Success) {
             ToastUtils.showToast(message = "Giriş başarılı!")
