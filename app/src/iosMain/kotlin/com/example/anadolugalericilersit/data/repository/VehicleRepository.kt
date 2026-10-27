@@ -113,8 +113,8 @@ actual class VehicleRepository actual constructor() {
         return try {
             val fields = """
                 {
-                  "status": { "stringValue": "${updated.status.name}" },
-                  "rejectionReason": { "stringValue": "${updated.rejectionReason}" }
+                  "status": { "stringValue": ${quoteJson(updated.status.name)} },
+                  "rejectionReason": { "stringValue": ${quoteJson(updated.rejectionReason)} }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("vehicles", vehicleId, fields)
