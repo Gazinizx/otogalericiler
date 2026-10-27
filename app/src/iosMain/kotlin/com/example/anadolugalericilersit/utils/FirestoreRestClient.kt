@@ -6,6 +6,7 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.*
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 @OptIn(BetaInteropApi::class)
 object FirestoreRestClient {
