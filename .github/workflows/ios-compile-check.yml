@@ -1,0 +1,21 @@
+name: iOS Compile Check
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  compile-ios-framework:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Compile iOS release framework
+        run: ./gradlew :app:linkReleaseFrameworkIosArm64 --no-daemon
