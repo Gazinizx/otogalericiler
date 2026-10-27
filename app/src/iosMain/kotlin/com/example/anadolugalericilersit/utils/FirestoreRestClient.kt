@@ -20,21 +20,45 @@ object FirestoreRestClient {
         fetchVehiclesFromCloud().forEach { LocalStore.vehicles[it.id] = it }
     }
 
-    suspend fun fetchDealersFromCloud(): List<Dealer> {
-        val json = fetchCollection("dealers") ?: return emptyList()
-        return documentChunks(json, "dealers").mapNotNull { parseDealer(it) }
+    suspend fun fetchDealersFromCloud(): List<Dealer> =
+        fetchCollection("dealers").mapNotNull { parseDealer(it) }
+
+    suspend fun fetchVehiclesFromCloud(): List<Vehicle> =
+        fetchCollection("vehicles").mapNotNull { parseVehicle(it) }
+
+    /**
+     * Fetch every Firestore page. Network/HTTP/JSON failures are surfaced to callers;
+     * they must never be represented as an empty collection because that hides listings.
+     */
+    private suspend fun fetchCollection(collection: String): List<String> {
+        val documents = mutableListOf<String>()
+        var pageToken: String? = null
+        val seenTokens = mutableSetOf<String>()
+
+        do {
+            val token = pageToken
+            val query = if (token.isNullOrBlank()) {
+                "pageSize=1000"
+            } else {
+                "pageSize=1000&pageToken=${encodeQueryValue(token)}"
+            }
+            val json = fetchPage(collection, query)
+            documents += documentChunks(json, collection)
+            pageToken = Regex("\\\"nextPageToken\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+                .find(json)?.groupValues?.get(1)
+            if (!pageToken.isNullOrBlank() && !seenTokens.add(pageToken!!)) {
+                throw IllegalStateException("Firestore sayfalama belirteci tekrarlandı: $collection")
+            }
+        } while (!pageToken.isNullOrBlank())
+
+        return documents
     }
 
-    suspend fun fetchVehiclesFromCloud(): List<Vehicle> {
-        val json = fetchCollection("vehicles") ?: return emptyList()
-        return documentChunks(json, "vehicles").mapNotNull { parseVehicle(it) }
-    }
-
-    private suspend fun fetchCollection(collection: String): String? =
+    private suspend fun fetchPage(collection: String, query: String): String =
         suspendCancellableCoroutine { continuation ->
-            val url = NSURL.URLWithString("$BASE_URL/$collection?pageSize=1000")
+            val url = NSURL.URLWithString("$BASE_URL/$collection?$query")
             if (url == null) {
-                continuation.resume(null)
+                continuation.resumeWithException(IllegalArgumentException("Firestore URL oluşturulamadı"))
                 return@suspendCancellableCoroutine
             }
             val request = NSMutableURLRequest.requestWithURL(url)
@@ -42,16 +66,35 @@ object FirestoreRestClient {
             val task = NSURLSession.sharedSession.dataTaskWithRequest(request) { data, response, error ->
                 if (continuation.isCancelled) return@dataTaskWithRequest
                 val status = (response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-                if (error != null || status !in 200..299 || data == null) {
-                    continuation.resume(null)
+                if (error != null) {
+                    continuation.resumeWithException(
+                        IllegalStateException("Firestore bağlantı hatası ($collection): ${error.localizedDescription ?: "bilinmeyen ağ hatası"}")
+                    )
                     return@dataTaskWithRequest
                 }
-                continuation.resume(NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String)
+                if (status !in 200..299 || data == null) {
+                    val body = data?.let {
+                        NSString.create(data = it, encoding = NSUTF8StringEncoding) as? String
+                    }.orEmpty().take(300)
+                    continuation.resumeWithException(
+                        IllegalStateException("Firestore okuma başarısız ($collection, HTTP $status)${if (body.isBlank()) "" else ": $body"}")
+                    )
+                    return@dataTaskWithRequest
+                }
+                val json = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
+                if (json == null) {
+                    continuation.resumeWithException(IllegalStateException("Firestore yanıtı UTF-8 olarak okunamadı"))
+                } else {
+                    continuation.resume(json)
+                }
             }
             continuation.invokeOnCancellation { task.cancel() }
             task.resume()
         }
 
+    private fun encodeQueryValue(value: String): String =
+        value.replace("%", "%25").replace(" ", "%20").replace("+", "%2B")
+            .replace("/", "%2F").replace("=", "%3D")
     private fun documentChunks(json: String, collection: String): List<String> {
         val documentPattern = Regex("\"name\"\\s*:\\s*\"[^\"]*/" + Regex.escape(collection) + "/[^\"]+\"")
         return json.split(Regex("(?=\\{\\s*\"name\"\\s*:)"))
