@@ -28,54 +28,60 @@ actual class DealerRepository actual constructor() {
     actual suspend fun updateDealerStatus(dealerId: String, newStatus: DealerStatus, rejectionReason: String): Resource<Unit> {
         val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
         val updated = dealer.copy(accountStatus = newStatus, rejectionReason = rejectionReason)
-        LocalStore.dealers[dealerId] = updated
-        try {
+        return try {
             val fields = """
                 {
-                  "accountStatus": { "stringValue": "${updated.accountStatus.name}" },
-                  "rejectionReason": { "stringValue": "${updated.rejectionReason}" }
+                  "accountStatus": { "stringValue": "${jsonQuote(updated.accountStatus.name)}" },
+                  "rejectionReason": { "stringValue": "${jsonQuote(updated.rejectionReason)}" }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealerId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.dealers[dealerId] = updated
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galeri durumu buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun updateDealerProfile(dealer: Dealer): Resource<Unit> {
-        LocalStore.dealers[dealer.id] = dealer
-        try {
+        return try {
             val fields = """
                 {
-                  "galleryName": { "stringValue": "${dealer.galleryName}" },
-                  "authorizedName": { "stringValue": "${dealer.authorizedName}" },
-                  "phone": { "stringValue": "${dealer.phone}" },
-                  "city": { "stringValue": "${dealer.city}" },
-                  "district": { "stringValue": "${dealer.district}" },
-                  "address": { "stringValue": "${dealer.address}" },
-                  "taxNumber": { "stringValue": "${dealer.taxNumber}" },
-                  "iban": { "stringValue": "${dealer.iban}" },
-                  "ibanOwnerName": { "stringValue": "${dealer.ibanOwnerName}" },
-                  "description": { "stringValue": "${dealer.description}" }
+                  "galleryName": { "stringValue": ${jsonQuote(dealer.galleryName)} },
+                  "authorizedName": { "stringValue": ${jsonQuote(dealer.authorizedName)} },
+                  "phone": { "stringValue": ${jsonQuote(dealer.phone)} },
+                  "city": { "stringValue": ${jsonQuote(dealer.city)} },
+                  "district": { "stringValue": ${jsonQuote(dealer.district)} },
+                  "address": { "stringValue": ${jsonQuote(dealer.address)} },
+                  "taxNumber": { "stringValue": ${jsonQuote(dealer.taxNumber)} },
+                  "iban": { "stringValue": ${jsonQuote(dealer.iban)} },
+                  "ibanOwnerName": { "stringValue": ${jsonQuote(dealer.ibanOwnerName)} },
+                  "description": { "stringValue": ${jsonQuote(dealer.description)} }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealer.id, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.dealers[dealer.id] = dealer
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galeri profili buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun updateDealerLogo(context: Any?, dealerId: String, logoUri: Any): Resource<String> {
         val url = logoUri.toString()
         val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
-        LocalStore.dealers[dealerId] = dealer.copy(logoUrl = url)
-        try {
+        return try {
             val fields = """
                 {
-                  "logoUrl": { "stringValue": "$url" }
+                  "logoUrl": { "stringValue": ${jsonQuote(url)} }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealerId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(url)
+            LocalStore.dealers[dealerId] = dealer.copy(logoUrl = url)
+            Resource.Success(url)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galeri logosu buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun recordDebtOrPayment(
@@ -84,19 +90,22 @@ actual class DealerRepository actual constructor() {
         isDebt: Boolean,
         note: String
     ): Resource<Unit> {
+        if (!amount.isFinite() || amount <= 0.0) return Resource.Error("Geçerli bir tutar girin")
         val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
         val newDebt = if (isDebt) dealer.totalDebt + amount else (dealer.totalDebt - amount).coerceAtLeast(0.0)
         val updated = dealer.copy(totalDebt = newDebt)
-        LocalStore.dealers[dealerId] = updated
-        try {
+        return try {
             val fields = """
                 {
                   "totalDebt": { "doubleValue": $newDebt }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealerId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.dealers[dealerId] = updated
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Borç bilgisi buluta kaydedilemedi")
+        }
     }
 
     actual suspend fun getDebtTransactions(dealerId: String): Resource<List<DebtTransaction>> {
@@ -105,17 +114,40 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun updateDamgaCount(dealerId: String, newDamgaCount: Int): Resource<Unit> {
+        if (newDamgaCount < 0) return Resource.Error("Damga sayısı negatif olamaz")
         val dealer = LocalStore.dealers[dealerId] ?: Dealer(id = dealerId)
         val updated = dealer.copy(damgaCount = newDamgaCount)
-        LocalStore.dealers[dealerId] = updated
-        try {
+        return try {
             val fields = """
                 {
                   "damgaCount": { "integerValue": "$newDamgaCount" }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealerId, fields)
-        } catch (_: Exception) {}
-        return Resource.Success(Unit)
+            LocalStore.dealers[dealerId] = updated
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Damga sayısı buluta kaydedilemedi")
+        }
     }
+    private fun jsonQuote(value: String): String = buildString {
+        append('"')
+        value.forEach { ch ->
+            when (ch) {
+                '"' -> append("\\\"")
+                '\\' -> append("\\\\")
+                '\b' -> append("\\b")
+                '\u000C' -> append("\\f")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (ch.code < 0x20) {
+                    append("\\u")
+                    append(ch.code.toString(16).padStart(4, '0'))
+                } else append(ch)
+            }
+        }
+        append('"')
+    }
+
 }
