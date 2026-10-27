@@ -16,27 +16,51 @@ actual class VehicleRepository actual constructor() {
         sort: VehicleSort,
         limit: Int
     ): Resource<List<Vehicle>> {
-        var list = FirestoreRestClient.fetchVehiclesFromCloud()
-        if (filter.brand != null) list = list.filter { it.brand.equals(filter.brand, true) }
-        return Resource.Success(list.take(limit))
+        return try {
+            var list = FirestoreRestClient.fetchVehiclesFromCloud()
+            if (filter.brand != null) list = list.filter { it.brand.equals(filter.brand, true) }
+            Resource.Success(list.take(limit.coerceAtLeast(0)))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "İlanlar sunucudan alınamadı")
+        }
     }
 
     actual suspend fun getVehicleById(vehicleId: String): Resource<Vehicle> {
-        val list = FirestoreRestClient.fetchVehiclesFromCloud()
-        val v = list.find { it.id == vehicleId } ?: return Resource.Error("Araç bulunamadı")
-        return Resource.Success(v)
+        return try {
+            val list = FirestoreRestClient.fetchVehiclesFromCloud()
+            val v = list.find { it.id == vehicleId } ?: return Resource.Error("Araç bulunamadı")
+            Resource.Success(v)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Araç bilgileri sunucudan alınamadı")
+        }
     }
 
     actual suspend fun getVehiclesByDealer(dealerId: String, statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
-        var list = FirestoreRestClient.fetchVehiclesFromCloud().filter { it.dealerId == dealerId }
-        if (statusFilter != null) list = list.filter { it.status == statusFilter }
-        return Resource.Success(list)
+        return try {
+            var list = FirestoreRestClient.fetchVehiclesFromCloud().filter { it.dealerId == dealerId }
+            if (statusFilter != null) list = list.filter { it.status == statusFilter }
+            Resource.Success(list)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galerinin ilanları sunucudan alınamadı")
+        }
     }
 
     actual suspend fun getVehiclesByStatusForAdmin(statusFilter: VehicleStatus?): Resource<List<Vehicle>> {
-        var list = FirestoreRestClient.fetchVehiclesFromCloud()
-        if (statusFilter != null) list = list.filter { it.status == statusFilter }
-        return Resource.Success(list)
+        return try {
+            var list = FirestoreRestClient.fetchVehiclesFromCloud()
+            if (statusFilter != null) list = list.filter { it.status == statusFilter }
+            Resource.Success(list)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Yönetim ilanları sunucudan alınamadı")
+        }
     }
 
     actual suspend fun saveVehicle(
