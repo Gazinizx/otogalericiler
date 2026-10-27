@@ -53,17 +53,46 @@ actual class VehicleRepository actual constructor() {
         return try {
             val fields = """
                 {
-                  "id": { "stringValue": "${saved.id}" },
-                  "dealerId": { "stringValue": "${saved.dealerId}" },
-                  "dealerName": { "stringValue": "${saved.dealerName}" },
-                  "dealerCity": { "stringValue": "${saved.dealerCity}" },
-                  "brand": { "stringValue": "${saved.brand}" },
-                  "model": { "stringValue": "${saved.model}" },
+                  "id": { "stringValue": ${quoteJson(saved.id)} },
+                  "dealerId": { "stringValue": ${quoteJson(saved.dealerId)} },
+                  "dealerName": { "stringValue": ${quoteJson(saved.dealerName)} },
+                  "dealerPhone": { "stringValue": ${quoteJson(saved.dealerPhone)} },
+                  "dealerCity": { "stringValue": ${quoteJson(saved.dealerCity)} },
+                  "dealerDistrict": { "stringValue": ${quoteJson(saved.dealerDistrict)} },
+                  "dealerLogoUrl": { "stringValue": ${quoteJson(saved.dealerLogoUrl)} },
+                  "brand": { "stringValue": ${quoteJson(saved.brand)} },
+                  "model": { "stringValue": ${quoteJson(saved.model)} },
                   "year": { "integerValue": "${saved.year}" },
-                  "price": { "doubleValue": ${saved.price} },
                   "km": { "integerValue": "${saved.km}" },
-                  "status": { "stringValue": "${saved.status.name}" },
-                  "createdAt": { "integerValue": "${saved.createdAt}" }
+                  "fuelType": { "stringValue": ${quoteJson(saved.fuelType)} },
+                  "transmission": { "stringValue": ${quoteJson(saved.transmission)} },
+                  "bodyType": { "stringValue": ${quoteJson(saved.bodyType)} },
+                  "engineSize": { "stringValue": ${quoteJson(saved.engineSize)} },
+                  "enginePower": { "stringValue": ${quoteJson(saved.enginePower)} },
+                  "drivetrain": { "stringValue": ${quoteJson(saved.drivetrain)} },
+                  "color": { "stringValue": ${quoteJson(saved.color)} },
+                  "price": { "doubleValue": ${saved.price} },
+                  "negotiable": { "booleanValue": ${saved.negotiable} },
+                  "suitableForCredit": { "booleanValue": ${saved.suitableForCredit} },
+                  "description": { "stringValue": ${quoteJson(saved.description)} },
+                  "licensePlate": { "stringValue": ${quoteJson(saved.licensePlate)} },
+                  "features": { "arrayValue": { "values": ${stringArrayJson(saved.features)} } },
+                  "imageUrls": { "arrayValue": { "values": ${stringArrayJson(saved.imageUrls)} } },
+                  "mainImageUrl": { "stringValue": ${quoteJson(saved.mainImageUrl)} },
+                  "videoUrl": { "stringValue": ${quoteJson(saved.videoUrl)} },
+                  "status": { "stringValue": ${quoteJson(saved.status.name)} },
+                  "viewCount": { "integerValue": "${saved.viewCount}" },
+                  "favoriteCount": { "integerValue": "${saved.favoriteCount}" },
+                  "rejectionReason": { "stringValue": ${quoteJson(saved.rejectionReason)} },
+                  "hasDamga": { "booleanValue": ${saved.hasDamga} },
+                  "expertInspectionCost": { "doubleValue": ${saved.expertInspectionCost} },
+                  "expertReportStatus": { "stringValue": ${quoteJson(saved.expertReportStatus)} },
+                  "expertReportDetails": { "stringValue": ${quoteJson(saved.expertReportDetails)} },
+                  "expertReportImageUrl": { "stringValue": ${quoteJson(saved.expertReportImageUrl)} },
+                  "bodyPartsCondition": { "mapValue": { "fields": ${stringMapJson(saved.bodyPartsCondition)} } },
+                  "damgaStatus": { "stringValue": ${quoteJson(saved.damgaStatus.name)} },
+                  "createdAt": { "integerValue": "${saved.createdAt}" },
+                  "updatedAt": { "integerValue": "${saved.updatedAt}" }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("vehicles", saved.id, fields)
@@ -135,4 +164,32 @@ actual class VehicleRepository actual constructor() {
         LocalStore.vehicles.clear()
         return Resource.Success(Unit)
     }
+    private fun quoteJson(value: String): String = buildString {
+        append('"')
+        value.forEach { ch ->
+            when (ch) {
+                '"' -> append("\\\"")
+                '\\' -> append("\\\\")
+                '\b' -> append("\\b")
+                '\u000C' -> append("\\f")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (ch.code < 0x20) {
+                    append("\\u")
+                    append(ch.code.toString(16).padStart(4, '0'))
+                } else append(ch)
+            }
+        }
+        append('"')
+    }
+
+    private fun stringArrayJson(values: List<String>): String =
+        values.joinToString(prefix = "[", postfix = "]") { """{"stringValue": ${quoteJson(it)}}""" }
+
+    private fun stringMapJson(values: Map<String, String>): String =
+        values.entries.joinToString(prefix = "{", postfix = "}") {
+            "${quoteJson(it.key)}: { \"stringValue\": ${quoteJson(it.value)} }"
+        }
+
 }
