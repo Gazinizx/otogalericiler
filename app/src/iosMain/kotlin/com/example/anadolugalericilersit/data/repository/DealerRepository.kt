@@ -31,8 +31,8 @@ actual class DealerRepository actual constructor() {
         return try {
             val fields = """
                 {
-                  "accountStatus": { "stringValue": "${jsonQuote(updated.accountStatus.name)}" },
-                  "rejectionReason": { "stringValue": "${jsonQuote(updated.rejectionReason)}" }
+                  "accountStatus": { "stringValue": ${jsonQuote(updated.accountStatus.name)} },
+                  "rejectionReason": { "stringValue": ${jsonQuote(updated.rejectionReason)} }
                 }
             """.trimIndent()
             FirestoreSync.patchDocument("dealers", dealerId, fields)
