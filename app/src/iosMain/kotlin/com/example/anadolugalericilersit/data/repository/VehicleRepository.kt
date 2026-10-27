@@ -18,7 +18,50 @@ actual class VehicleRepository actual constructor() {
     ): Resource<List<Vehicle>> {
         return try {
             var list = FirestoreRestClient.fetchVehiclesFromCloud()
-            if (filter.brand != null) list = list.filter { it.brand.equals(filter.brand, true) }
+            if (filter.searchQuery.isNotBlank()) {
+                val query = filter.searchQuery.trim()
+                list = list.filter {
+                    it.brand.contains(query, ignoreCase = true) ||
+                        it.model.contains(query, ignoreCase = true) ||
+                        it.dealerName.contains(query, ignoreCase = true) ||
+                        it.dealerCity.contains(query, ignoreCase = true) ||
+                        it.description.contains(query, ignoreCase = true)
+                }
+            }
+            filter.brand?.takeIf { it.isNotBlank() }?.let { brand ->
+                list = list.filter { it.brand.equals(brand, ignoreCase = true) }
+            }
+            filter.model?.takeIf { it.isNotBlank() }?.let { model ->
+                list = list.filter { it.model.contains(model, ignoreCase = true) }
+            }
+            filter.minPrice?.let { min -> list = list.filter { it.price >= min } }
+            filter.maxPrice?.let { max -> list = list.filter { it.price <= max } }
+            filter.minYear?.let { min -> list = list.filter { it.year >= min } }
+            filter.maxYear?.let { max -> list = list.filter { it.year <= max } }
+            filter.minKm?.let { min -> list = list.filter { it.km >= min } }
+            filter.maxKm?.let { max -> list = list.filter { it.km <= max } }
+            filter.fuelType?.takeIf { it.isNotBlank() }?.let { fuel ->
+                list = list.filter { it.fuelType.equals(fuel, ignoreCase = true) }
+            }
+            filter.transmission?.takeIf { it.isNotBlank() }?.let { transmission ->
+                list = list.filter { it.transmission.equals(transmission, ignoreCase = true) }
+            }
+            filter.bodyType?.takeIf { it.isNotBlank() }?.let { body ->
+                list = list.filter { it.bodyType.equals(body, ignoreCase = true) }
+            }
+            filter.city?.takeIf { it.isNotBlank() }?.let { city ->
+                list = list.filter { it.dealerCity.contains(city, ignoreCase = true) }
+            }
+            filter.color?.takeIf { it.isNotBlank() }?.let { color ->
+                list = list.filter { it.color.contains(color, ignoreCase = true) }
+            }
+            list = when (sort) {
+                VehicleSort.NEWEST -> list.sortedByDescending { it.createdAt }
+                VehicleSort.OLDEST -> list.sortedBy { it.createdAt }
+                VehicleSort.PRICE_ASC -> list.sortedBy { it.price }
+                VehicleSort.PRICE_DESC -> list.sortedByDescending { it.price }
+                VehicleSort.KM_ASC -> list.sortedBy { it.km }
+            }
             Resource.Success(list.take(limit.coerceAtLeast(0)))
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
