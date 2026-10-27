@@ -14,15 +14,27 @@ actual class DealerRepository actual constructor() {
     }
 
     actual suspend fun getDealers(status: DealerStatus?): Resource<List<Dealer>> {
-        val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
-        val filtered = if (status != null) cloudDealers.filter { it.accountStatus == status } else cloudDealers
-        return Resource.Success(filtered)
+        return try {
+            val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
+            val filtered = if (status != null) cloudDealers.filter { it.accountStatus == status } else cloudDealers
+            Resource.Success(filtered)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galeriler sunucudan alınamadı")
+        }
     }
 
     actual suspend fun getDealerById(dealerId: String): Resource<Dealer> {
-        val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
-        val dealer = cloudDealers.find { it.id == dealerId } ?: return Resource.Error("Galeri bulunamadı")
-        return Resource.Success(dealer)
+        return try {
+            val cloudDealers = FirestoreRestClient.fetchDealersFromCloud()
+            val dealer = cloudDealers.find { it.id == dealerId } ?: return Resource.Error("Galeri bulunamadı")
+            Resource.Success(dealer)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Galeri bilgileri sunucudan alınamadı")
+        }
     }
 
     actual suspend fun updateDealerStatus(dealerId: String, newStatus: DealerStatus, rejectionReason: String): Resource<Unit> {
