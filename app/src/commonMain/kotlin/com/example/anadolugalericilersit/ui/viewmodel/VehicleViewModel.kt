@@ -48,7 +48,13 @@ class VehicleViewModel(
     fun loadVehicleDetail(vehicleId: String, currentUserId: String? = null) {
         viewModelScope.launch {
             _detailState.value = Resource.Loading()
-            val result = vehicleRepository.getVehicleById(vehicleId)
+            val result = try {
+                vehicleRepository.getVehicleById(vehicleId)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Araç bilgileri yüklenemedi")
+            }
             _detailState.value = result
 
             if (result is Resource.Success && result.data != null) {
@@ -62,7 +68,13 @@ class VehicleViewModel(
         _currentSort.value = sort
         viewModelScope.launch {
             _searchListState.value = Resource.Loading()
-            val result = vehicleRepository.getVehicles(filter = filter, sort = sort)
+            val result = try {
+                vehicleRepository.getVehicles(filter = filter, sort = sort)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "İlanlar yüklenemedi")
+            }
             _searchListState.value = result
         }
     }
@@ -70,7 +82,13 @@ class VehicleViewModel(
     fun loadMyListings(dealerId: String, statusFilter: VehicleStatus? = null) {
         viewModelScope.launch {
             _myListingsState.value = Resource.Loading()
-            val result = vehicleRepository.getVehiclesByDealer(dealerId, statusFilter)
+            val result = try {
+                vehicleRepository.getVehiclesByDealer(dealerId, statusFilter)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Resource.Error(e.message ?: "Galerinin ilanları yüklenemedi")
+            }
             _myListingsState.value = result
         }
     }
