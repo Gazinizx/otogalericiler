@@ -200,6 +200,20 @@ class AdminViewModel(
         }
     }
 
+    fun resetSystemDatabase(onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _actionState.value = Resource.Loading()
+            val result = adminRepository.resetDatabase()
+            _actionState.value = result
+            if (result is Resource.Success) {
+                loadStats()
+                onComplete(true, "Sistem başarıyla sıfırlandı. Yönetici hesapları dışındaki tüm veriler ve ilanlar silindi.")
+            } else {
+                onComplete(false, result.message ?: "Sıfırlama başarısız")
+            }
+        }
+    }
+
     fun clearActionState() {
         _actionState.value = Resource.Empty()
     }

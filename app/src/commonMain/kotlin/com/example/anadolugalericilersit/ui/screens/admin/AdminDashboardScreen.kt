@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import com.example.anadolugalericilersit.ui.components.AppAsyncImage
 import com.example.anadolugalericilersit.ui.viewmodel.AdminViewModel
 import com.example.anadolugalericilersit.utils.IntentUtils
 import com.example.anadolugalericilersit.utils.Resource
+import com.example.anadolugalericilersit.utils.ToastUtils
 import com.example.anadolugalericilersit.utils.rememberImagePickerLauncher
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,10 +56,13 @@ fun AdminDashboardScreen(
 
     var showAnnouncementDialog by remember { mutableStateOf(false) }
     var showManageAnnouncementsDialog by remember { mutableStateOf(false) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
+
     var announcementTitle by remember { mutableStateOf("") }
     var announcementMessage by remember { mutableStateOf("") }
     var announcementImageUrl by remember { mutableStateOf("") }
     var isSendingAnnouncement by remember { mutableStateOf(false) }
+    var isResetting by remember { mutableStateOf(false) }
 
     var activeAnnouncements by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
     val notificationRepository = remember { NotificationRepository() }
@@ -199,6 +204,16 @@ fun AdminDashboardScreen(
                 title = "Galerici Borç & Cari Takip",
                 subtitle = "Arama ile galericilerin borç durumlarını gör, tutar ve işlem geçmişi ekle",
                 onClick = onNavigateToDebts
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AdminNavigationCard(
+                icon = Icons.Default.Warning,
+                title = "Sistemi Sıfırla (Tüm İlanları ve Kullanıcıları Sil)",
+                subtitle = "Admin hesapları dışındaki tüm galeri, ilan ve verileri kalıcı olarak temizle",
+                tint = MaterialTheme.colorScheme.error,
+                onClick = { showResetConfirmDialog = true }
             )
         }
     }
@@ -342,6 +357,41 @@ fun AdminDashboardScreen(
             confirmButton = {
                 TextButton(onClick = { showManageAnnouncementsDialog = false }) {
                     Text("Kapat")
+                }
+            }
+        )
+    }
+
+    if (showResetConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmDialog = false },
+            title = { Text("⚠️ Sistemi Sıfırla") },
+            text = {
+                Text("Yönetici (Admin) hesapları dışındaki TÜM galeriler, TÜM araç ilanları, favoriler, bildirimler ve kullanıcılar KALICI olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isResetting = true
+                        adminViewModel.resetSystemDatabase { success, msg ->
+                            isResetting = false
+                            showResetConfirmDialog = false
+                            ToastUtils.showToast(message = msg ?: (if (success) "Sistem sıfırlandı" else "Hata oluştu"))
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    enabled = !isResetting
+                ) {
+                    if (isResetting) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
+                    } else {
+                        Text("Evet, Her Şeyi Sil")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirmDialog = false }) {
+                    Text("İptal")
                 }
             }
         )

@@ -40,4 +40,13 @@ actual class AdminRepository {
             Resource.Error(e.message ?: "İstatistikler hesaplanamadı")
         }
     }
+
+    actual suspend fun resetDatabase(): Resource<Unit> {
+        LocalStore.vehicles.clear()
+        LocalStore.dealers.clear()
+        LocalStore.reports.clear()
+        LocalStore.favorites.clear()
+        LocalStore.notifications.clear()
+        return Resource.Success(Unit)
+    }
 }

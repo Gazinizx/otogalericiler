@@ -5,4 +5,5 @@ import com.example.anadolugalericilersit.utils.Resource
 
 expect class AdminRepository() {
     suspend fun getAdminStats(): Resource<AdminStats>
+    suspend fun resetDatabase(): Resource<Unit>
 }
