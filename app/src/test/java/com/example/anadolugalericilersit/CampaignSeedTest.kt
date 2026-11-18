@@ -10,7 +10,7 @@ import java.io.File
 class CampaignSeedTest {
 
     @Test
-    fun seedCampaigns() = runBlocking {
+    fun seedCampaigns(): Unit = runBlocking {
         val repo = NotificationRepository()
 
         val file1 = File("src/main/res/drawable/damga_hediye_firsati.png")
